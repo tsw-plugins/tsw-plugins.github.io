@@ -131,8 +131,31 @@ Reloading the mod (`tswcmd reload`) unregisters every hook it registered.
   the game (`IsGamePaused` true) and every control then "stalled". The `ready` failure on the
   spawned loco happened in that state and must be repeated. Rules: never spawn onto track near
   other vehicles in a running scenario (check occupancy first, or spawn in free roam on an empty
-  siding), and check `IsGamePaused` plus a screenshot before blaming a probe. The `spawner` variant
-  (ATrainSpawner at the pawn's own position) was not run for the same reason.
+  siding), and check `IsGamePaused` plus a screenshot before blaming a probe. Repeated later away
+  from traffic: the reverser key went in normally, so the failure was the pause.
+
+### Spawner and synthetic key, away from traffic (12:40–12:47)
+
+- **Free roam from code:** `con ts2.dbg.LoadTimetable /TrainingCentre_Route_Gameplay/Timetable/TC_Timetable.TC_Timetable`
+  loads the route in timetable mode: walking pawn, 84 parked vehicles, no AI drivers, no
+  `SandboxManager`. Works as a free-roam stand-in without touching the menus.
+- **`FindTrainSpawnLocationNearDriverPawn(pawn, DistanceCM, …)` is not an offset along the track.**
+  `GetTransformAtTrackLocation(pawn, loc, out)` (out struct filled in place: `out.Translation`)
+  showed: 8000/20000/40000 → a point 5 m from the pawn, 80000 → 229 m away, 150000 → not found.
+  That is why the scenario spawn hit the train the pawn sat in. The bridge's `spawn` now resolves
+  the point and refuses when any vehicle (view actor position; the `RailVehicle` actors can all
+  report one location in timetable mode) is within 100 m, unless `force`. The direction comes
+  back as `dir.OutLocalSpawnDir`; the bridge used `dir[1]` (always nil → Forwards).
+- **`ATrainSpawner` works** (`native/08b_spawner_clear_point.lua`, placed on the 80000 point
+  184 m from the nearest vehicle): deferred spawn + `bApplyPreset`/`PresetConfig{Preset=2}` +
+  `SpawnConsist()` made one BR 146 with `Preset=2`, both pantographs down. No crash.
+- **Spawned trains do not simulate.** On that loco `drive ready` got key, reverser, pantograph,
+  breaker, dynamic and train brake right, but brake cylinder 1.06 / pipe 4.61 bar / main 9.74 bar
+  never changed in over a minute (the same numbers as every spawn), transformer read 0 V, and
+  `power 0.3` gave 0 N and 0 m/s. Spawned consists stay kinematic (`SimPhysicsEnabledState=1`).
+  Turning their simulation on is open; until then they are scenery, not test trains.
+- **Synthetic key via `CreatePressedReleasedKeyEvent` on the class default object:** no crash, no
+  effect (key `L`, cab lights stayed 0.50; TSW was not focused). Not a usable input path.
 
 ## Recommendations
 
@@ -149,5 +172,5 @@ lock), but only reaches the active cab.
 
 ## Open
 
-- Native probes 07 (`ApplyVHIDPreset`; the BR 146 presets are only lights) and 08 (spawn running) not run.
+- How to switch a spawned consist's simulation on (`SimPhysicsEnabledState`, physics mode).
 - Whether a replayed `BeginIncreasingVHIDComponent` RPC from Lua is accepted (input probe 06).
