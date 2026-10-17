@@ -176,6 +176,16 @@ session, otherwise only with `?secret=<hex of the invite's secret>` (403
 without). The standalone relay answers 404. Players are counted over all
 rooms, the host first in `names`; `route`/`timetable` are the host's.
 
+A hosted session is **one room whatever the route**: each player's own
+room (the `hello.room` it sent) comes as `room` in its `welcome.players`
+and `joined` entries, and `welcome.room` is the joiner's own. `welcome.host`
+is always the session's host, even while it is not connected (in the main
+menu), never a guest. `snapshot` and `avatar` (also the replay to a late
+joiner) only pass between players on the same route; `consist`, `event`
+and `chat` reach everyone. A guest whose host is on another route says so
+(the mod: "<host> is on <route>; load it to play together"), and sees the
+host once it loads that route (a room change is a new connection).
+
 ### `joined` / `left`
 
 ```json
