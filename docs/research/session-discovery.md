@@ -245,7 +245,9 @@ at once, first answer wins (as OpenOMSI does):
    Checked from Linux with `cargo run -p tsw-coop-client --example
    portmap` (search and address only, nothing mapped): the maintainer's
    Fritz!Box answers at `192.168.2.1:49000` and its external IPv4 address
-   is public, so a mapping would reach the host. Fritz!OS only accepts
+   is public, so a mapping would reach the host. Then `-- 7441 15` (Linux,
+   same PC): the router mapped 7441 to this machine at once and removed it
+   on request; renewal (after 10 min) not yet seen. Fritz!OS only accepts
    mappings from devices with "allow independent port sharing" (Selbstständige
    Portfreigaben) switched on; otherwise the router refuses and the log
    says so. Not built: PCP and NAT-PMP (most home routers speak UPnP-IGD;
