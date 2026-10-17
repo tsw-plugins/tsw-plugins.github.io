@@ -8,9 +8,11 @@ integration tests), not yet tried in game:
   (`tsw-coop-relay/src/admission.rs`, docs/07 "Joining a hosted session");
 - the relay inside the host's game, `GET /status` on its port
   (`tsw-coop-relay/src/host.rs`, `http.rs`);
-- `host =` / `join =` in `tswcoop.cfg` (`mod/native/src/hosting.rs`).
+- `host =` / `join =` in `tswcoop.cfg` (`mod/native/src/hosting.rs`);
+- port mapping, UPnP-IGD only (`tsw-coop-client/src/portmap.rs`, "Reaching
+  the host" below).
 
-Not built yet: port mapping (`portmapper`), the master and Pages site,
+Not built yet: PCP / NAT-PMP, IPv6 pinholes, the master and Pages site,
 short codes, iroh. The text below is the concept as decided.
 
 Originally a concept. Asked for by the maintainer: hosts may list a session
@@ -226,6 +228,29 @@ at once, first answer wins (as OpenOMSI does):
    `portmapper` crate, with a lease, removed on exit, logged; skipped when
    the router's external address is private (CGNAT). Needs a test under
    Proton (SSDP multicast).
+
+   **Built (2026-10-18), UPnP-IGD only, with `igd-next` 0.17 instead of
+   `portmapper`:** `portmapper` brings iroh's tokio stack, netwatch and
+   metrics into the DLL; `igd-next` is blocking with no TLS (attohttpc,
+   xmltree, url). 0.17 because 0.18 needs Rust 1.88. The DLL grew 4.9 →
+   5.6 MB, mostly `url`'s IDNA tables. How it works: a thread searches for
+   the router (3 s), asks for its external address, maps the host's port
+   (same port outside) only when that address is public, with a 20 min
+   lease renewed every 10 min (a router that only keeps permanent mappings
+   gets lease 0), and removes it when hosting ends; a killed game leaves it
+   to the lease. Hosting waits at most 4 s for it (the mod's init thread,
+   not the game's); a mapping that comes later is kept but is not in that
+   invite. The public address goes into the invite after `advertise`.
+   `portmap = off` in `tswcoop.cfg` turns it off.
+   Checked from Linux with `cargo run -p tsw-coop-client --example
+   portmap` (search and address only, nothing mapped): the maintainer's
+   Fritz!Box answers at `192.168.2.1:49000` and its external IPv4 address
+   is public, so a mapping would reach the host. Fritz!OS only accepts
+   mappings from devices with "allow independent port sharing" (Selbstständige
+   Portfreigaben) switched on; otherwise the router refuses and the log
+   says so. Not built: PCP and NAT-PMP (most home routers speak UPnP-IGD;
+   Fritz!Box does), IPv6 pinholes (IGDv2 WANIPv6FirewallControl). Under
+   Proton: still to try whether the SSDP multicast gets out.
 4. Manual port forward (the host enters its public address/port, or the
    mod learns the public address from STUN).
 5. Hole punching (later): needs both sides' addresses at the same moment,
