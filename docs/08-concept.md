@@ -113,8 +113,14 @@ id. Reasons:
 - ~~Passenger pawn class for guests.~~ Answered 2026-10-17 (05 §10g): a
   second `TS2DefaultDriverPawn_C` re-hides its own mesh every tick, a
   plain `ACharacter` dressed with the game's NPC skeletal meshes renders.
-  Guest avatars use their own actor class. Still open: animation instance
-  class from the NPC pipeline, and whether the seat manager can seat it.
+  Guest avatars use their own actor class. Animation: no anim instance
+  needed, `PlayAnimation` with the NPC walk/stand/seated sequences works
+  (`docs/research/avatars.md`). Still open: whether the seat manager can
+  seat it.
+- Driver handover is built for the BR 146 (`docs/research/remote-driving.md`):
+  seat, driver announcement, lever values applied by the host, F8 reclaim.
+  Not yet: emergency brake when the host leaves the cab, per-class control
+  tables, the guest's view from the ghost cab.
 - Ghost lifecycle (05 §10f): `SpawnFormation` ghosts register in track
   occupancy, cannot be repositioned at the physics level while kinematic,
   and `K2_DestroyActor` leaves a stale occupancy GUID. Signal aspects are
