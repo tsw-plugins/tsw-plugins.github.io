@@ -56,10 +56,29 @@ braking. Its blueprints accept plain value sets; it moved at up to 16.9 m/s that
 
 ## Held input, not values
 
-The BR 146 blueprints react to `VirtualHIDChanged` events. `SetCurrentInputValue` moves a lever and
-fires nothing. `BeginIncreaseDigital(pc)` / `BeginDecreaseDigital(pc)` … `EndChanging(pc)` is a held
-key and fires the events. The DTG HTTP API's `/set` goes around interlocks and gets snapped back.
-`drive_ctl.move` holds until a target value; `hold` holds for a time; `press` taps a button.
+The BR 146 blueprints react to `VirtualHIDChanged` events. `BeginIncreaseDigital(pc)` /
+`BeginDecreaseDigital(pc)` … `EndChanging(pc)` is a held key and fires the events. The DTG HTTP API's
+`/set` goes around interlocks and gets snapped back. `drive_ctl.move` holds until a target value;
+`hold` holds for a time; `press` taps a button.
+
+**Correction (12:03, `drive rec`):** "a plain `SetCurrentInputValue` fires nothing" is wrong. The
+recorder hooks every `BndEvt__…` handler of the loco's class and showed that plain sets fire the
+control's `VirtualHIDChanged` handler too:
+
+| Action | Handler calls |
+| :--- | :--- |
+| `set Sand_F 1` | 1× `BndEvt__Sand_F_…VirtualHIDChanged` |
+| `hold Sand_F up 600` | 3× more of the same |
+| `move Throttle_F 0.1`, then `0` (held) | 2× `BndEvt__Throttle_F_…` |
+| `set Throttle_F 0.05`, then `0` | 2× `BndEvt__Throttle_F_…` |
+| `set BatteryControl_F 1`, `0`, `press BatteryControl_F` | 4× `BndEvt__BatteryControl_F_…` |
+| `call SetParkingBrakeLocal false` | none (it is the function the handler would end up in) |
+| (background) | `BndEvt__JumperCable_F_…ParameterValueChanged` 6× in a minute, on its own |
+
+So the event reaches the blueprint either way. Why the battery button still did not wake the cold
+loco and the parking-brake button ignored `BeginIncreaseDigital` must be **inside** the handler
+(it probably checks the input value, its previous value, or who is interacting), not a missing
+event. Open: record a human key press of the same buttons and diff it against ours.
 
 ## Verified runs
 
