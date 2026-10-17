@@ -76,3 +76,75 @@ for each vehicle). If the remaining 7–10 % matters, the next steps are:
 - `Mods/mods.txt`: `TswCoop : 1`, with the build described above.
 - `UE4SS-settings.ini`: `GuiConsoleEnabled = 0`, `GuiConsoleVisible = 0`. Leave the console off:
   it costs a full core even in the menus. Read `UE4SS.log` instead.
+
+## Vanilla against modded, same start (14:38–14:45)
+
+Frankfurt–Fulda full timetable, Fahrplan, on foot at Frankfurt Hbf, 10:00, 64/64 layers. The
+session runs about 1600 rail vehicles. Game speed is measured without UE4SS through the DTG
+HTTP API: the `TimeOfDay.Data` `LocalTime` advance divided by wall-clock time over 20 s
+(`gamespeed.sh` in the session scratchpad; it agrees with the Lua `GetTimeSeconds` measure to
+1 %).
+
+| Setup | Game speed (3 × 20 s) |
+| --- | --- |
+| no UE4SS (`dwmapi.dll` renamed) | 90 %, 100 %, 100 % |
+| UE4SS with every mod we had enabled | 51 %, 52 %, 52 % |
+
+The telemetry capture costs 7.5–8 ms at 10 Hz here (it stops at 1024 vehicles), which is about
+8 % of the game thread. The other ~40 % is UE4SS or another mod (bisect below).
+
+## Bisect: the cost is TswCoopDebug's polling (15:00–15:40)
+
+Same start as above, measured from 180 s after Play, 30 s samples:
+
+| Setup | Game speed |
+| --- | --- |
+| no UE4SS | 100, 100, 100, 100, 100 |
+| UE4SS, no mods, `HookAActorTick`/`HookProcessInternal`/`HookProcessLocalScriptFunction` = 0 (two sessions) | 100, 100, 100 / 100, 100, 100, 100, 100 |
+| UE4SS + TswCoopDebug only, same hooks off | 61, 62, 59, 63, 64 |
+| the same with the fix below (`102afe6`) | 100, 100, 100, 100, 100 |
+| UE4SS + every mod | 51, 52, 52 |
+
+UE4SS itself costs nothing measurable. TswCoopDebug alone costs ~40 %.
+
+**Cause.** `pc()` in `main.lua` was `FindFirstOf("PlayerController")`. `FindFirstOf` walks the
+whole `GUObjectArray`, and with ~1600 rail vehicles plus their components that is hundreds of
+thousands of objects. Two 30 ms polls (`Menu.poll` for the menu keys and `Jump.poll`) called it
+every time: about 66 full object-array walks a second on the game thread.
+
+**Fix.** `cached.lua` keeps the found object while `IsValid()` holds and, while there is none,
+searches at most once a second (`mod-lua/tests/test_cached.lua`). Rule for every future poll:
+never call `FindFirstOf`/`FindAllOf` per frame or per poll; cache, and re-find only when the
+cached object goes invalid.
+
+## Community reports on TSW performance under Linux (researched 2026-10-17)
+
+No report anywhere describes a Proton, DXVK/VKD3D or Engine.ini tweak that fixes a slowdown
+from heavy AI load. Sources: ProtonDB (TSW7 Gold, 9 reports; snippets only), Steam
+discussions, Dovetail forums and support pages, Reddit, and GitHub issues for Proton, DXVK and
+VKD3D.
+
+What has evidence behind it, all of it about AI load on the CPU:
+
+- **Fewer timetable layers, and no AI substitutions.** Dovetail's optimisation article and its
+  settings guide name the LAYERS button and the three substitution toggles under Advanced
+  Settings. "Enable All Timetable Layers" adds AI.
+  - https://support.dovetailgames.com/hc/en-us/articles/28572832051218
+  - https://support.dovetailgames.com/hc/en-us/articles/28572764655122-Train-Sim-World-Settings-Explained
+- **Reduced timetables.** Dovetail added them in 2026 for CPU-bound players: the TSW6 May patch
+  and WCML Crewe–Preston. An optimisation-focused TSW7 update is announced for October 2026.
+  - https://live.trainsimworld.com/news/train-sim-world-6-update-notes-may-28th-2026
+  - https://live.dovetailgames.com/news/train-sim-world-7-roadmap-october-2026
+
+Weak or anecdotal:
+
+- **`-dx12`.** DX12 is already the default since TSW4, and one Linux user saw no benefit.
+- **`game-performance`/gamemode.** This is a CachyOS helper, mentioned on ProtonDB for TSW6.
+- **Proton version.** Stock, Experimental and GE all work, and none is reported to be faster.
+- **Graphics-only Engine.ini presets.** Some of them cause bugs.
+- **`ts2.passenger.DensityScale`.** It scales station passengers; one report says the effect
+  is very small.
+- **Not mentioned at all for TSW:** DXVK_ASYNC, ntsync/fsync, CPU affinity.
+
+Conclusion: our mods cost far more than any Proton-side tweak could recover. The in-game levers
+are layers, substitutions and the reduced timetables.
