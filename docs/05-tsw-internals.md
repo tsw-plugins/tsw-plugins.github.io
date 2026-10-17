@@ -386,6 +386,38 @@ channel. Verified on the Training Centre:
   `ts2.dbg.SetTrainSpeed`, `ts2.dbg.RemoveTrainFromTrack`,
   `ts2.dispatcher.RequestEnterDispatchedNetwork`.
 
+## 10f. Occupancy, despawn and physics position (2026-10-17, scenario A loaded from the main menu)
+
+- **Scenario from the main menu works without UI**: `LoadAsset("/TrainingCentre_Route_Gameplay/Scenarios/ScA/TC_ScA_Def.TC_ScA_Def")`
+  followed by `LoadScenario(PlayerController, def)` goes from the main menu
+  straight into the scenario (`tswcmd "scenario /…/TC_ScA_Def.TC_ScA_Def"`).
+  The same `LoadAsset` fallback makes `spawn /…/TTC_146_Light.TTC_146_Light`
+  work in maps where no `TrainFormation` is loaded yet. Known Training
+  Centre asset paths: `dumps/tsw7-886/training-centre-{scenarios,formations}.txt`.
+- **Occupancy is readable**: `ATrackNetworkManager.TrackSectionsMap`
+  (`TMap<FGuid, FTrackNetworkSection>`, iterated with `TMap:ForEach`)
+  listed 189 sections, 19 occupied, and every `OccupationRailVehicleIds`
+  GUID resolved to a `RailVehiclePhysicsComponent.RailVehicleID` of a live
+  vehicle (104/104).
+- **A SpawnFormation ghost is registered with the dispatcher**: right after
+  spawning, its GUID appeared in the section it was placed on (shared with
+  the Class 66 standing there). So strategy B ghosts are *not* invisible
+  to signalling on the machine that spawns them.
+- **The physics position cannot be driven while kinematic**:
+  `URailVehicleComponent::SetOverrideLocation` returns without effect
+  (`GetPosition()` unchanged, view actor unchanged), like the other
+  override setters in §10b. Moving the view actor (§10b) does not move the
+  occupancy either. Consequence for the design in 08: guests render the
+  host's trains by moving view actors, and **signal aspects are replicated
+  from the host**, not derived from ghost occupancy.
+- **`K2_DestroyActor` is not a despawn**: the model actor goes away after
+  the next GC (`obj gc`), but its GUID stays in
+  `OccupationRailVehicleIds` forever (stale entry observed after GC). The
+  game's own despawn path has to be used (candidates:
+  `ASandboxManager::StartRemovingTrain(URailVehicleComponent*)`,
+  `ATrainSpawner::DespawnConsist`, console `ts2.dbg.RemoveTrainFromTrack`,
+  which did nothing when given an actor name). Still open.
+
 ## 11. Next verification steps (need the game)
 
 1. Find the far-to-local conversion (world far origin) so remote far
