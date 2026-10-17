@@ -112,7 +112,7 @@ between; the static page reads only that.
 | `name`, `motd` | ≤ 64 / ≤ 256 characters, control and bidi characters stripped | relay |
 | `password` | optional | relay before forwarding any traffic; host may re-check |
 | `max_players` | 2–8 (docs/08 limit) | relay at join (count plus pending), with an explicit "full" error; host may kick |
-| `show_players` | player names in the public query (default off) | relay |
+| `show_players` | player names in the public query and on the master (host decides, default off); without it the listing has no `names` array but still the player count | relay |
 
 Password: the host sends a salted hash (Argon2id) to the relay when opening
 the session; a joiner sends the password over `wss://` (TLS to the relay);
@@ -134,7 +134,7 @@ then back off), never logs it, and only `has_password` leaves the relay.
   "started_at": "2026-10-17T19:00:00Z", "names": ["blu", "rd"] }
 ```
 
-`names` only with `show_players`. Live map data (positions) is a separate,
+`names` only with `show_players`; without it the field is left out and `players` (the count) stays. Live map data (positions) is a separate,
 opt-in stream: `GET /v1/sessions/{code}/events` (SSE) relayed from what the
 relay already forwards (snapshots and avatars, thinned to 1–2 Hz), so the
 Pages map works for anyone with the code without touching the host's PC.
@@ -152,9 +152,18 @@ by default; a password-protected session's map needs the password).
   by the master fetching its `/v1/sessions` itself, which defeats fake
   listings. Caps: sessions per relay, sessions per host IP at the relay,
   heartbeats per relay.
-- The GitHub Pages site reads `GET /v1/sessions` from the master for the
-  browser, and a session's query and map stream from its relay. Join:
-  copy the code, or a `tswcoop://` link the installed mod handles.
+- **Hosting (maintainer, 2026-10-17):** the master backend runs as a Docker
+  container on the NAS, reachable from the internet through Tailscale
+  Funnel or a Cloudflare Tunnel (either gives it a public HTTPS name
+  without opening ports). Its API needs CORS for the Pages origin.
+- **The UI is a GitHub Pages site**, a server list with a details page per
+  session (query fields, player names if the host shares them, live map if
+  enabled). Address: `tsw-coop.github.io` needs a GitHub account or
+  organisation named `tsw-coop`; otherwise the project site of the
+  repository, `bluscream.github.io/tsw-coop`. The list reads
+  `GET /v1/sessions` from the master; the details page reads the session's
+  query and map stream from its relay. Join: copy the code, or a
+  `tswcoop://` link the installed mod handles.
 - The site is the only place with styling and the map (docs/08); the mod
   serves data.
 
@@ -203,12 +212,19 @@ in-process relay.
 
 ## Open questions for the maintainer
 
-- Who runs the default public relay and the master (NAS, a VPS, both)?
-  The NAS needs TLS and a public name for `wss://`/`https://`.
+- ~~Who runs the master?~~ Answered 2026-10-17: Docker on the NAS behind
+  Tailscale Funnel or a Cloudflare Tunnel; UI on GitHub Pages. Still open:
+  the same for the default public relay (it carries the game traffic, see
+  the bandwidth table), and which of the two tunnels (Cloudflare's terms
+  and WebSocket limits vs. Funnel's bandwidth).
+- ~~Player names in the listing?~~ Answered: the host decides
+  (`show_players`); without it only the count is shown.
 - Account-free listing (anyone can host) or tie public listing to
   something (a GitHub login, a per-relay key only)?
 - Should a public session's live map be visible to strangers at all, or
   only to people with the code?
+- Pages address: create a `tsw-coop` GitHub organisation for
+  `tsw-coop.github.io`, or use the repository's project site?
 
 ## Sources
 
