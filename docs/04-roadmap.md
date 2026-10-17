@@ -1,5 +1,8 @@
 # 04 — Roadmap and open questions
 
+> Superseded in part by [08-concept.md](08-concept.md) (2026-10-17): the
+> session model is host → clients, and the milestones are revised there.
+
 ## Milestones
 
 | # | Milestone | Needs a game install? | Exit criterion |

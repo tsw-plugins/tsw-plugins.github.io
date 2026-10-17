@@ -1,0 +1,104 @@
+# 08 — Concept and scope decisions (2026-10-17)
+
+Answers given by the maintainer on 2026-10-17. These override the more
+open-ended options in 03 and 04 wherever they conflict.
+
+## One sentence
+
+A host runs a normal TSW 7 scenario, opens a private lobby and hands out a
+join code; friends join *that* world as walking passengers who can explore
+the route, ride trains, and drive the host's train whenever the seat is
+free. The host's simulation is the only truth.
+
+## Decisions
+
+| Topic | Decision |
+| --- | --- |
+| Session model | **Host → clients.** The host selects and owns route, train, scenario, clock and weather. Guests do not bring their own scenario. |
+| Lobby lifecycle | Host starts a scenario first, then opens the lobby. A route change ends the session. |
+| Guest body | A walking passenger pawn, visible to all other players, able to board trains and sit. |
+| Explore scope | The whole loaded route on foot, including riding the host's AI trains as a passenger. |
+| Simulation | **Host always simulates** its train. A driving guest sends inputs; the host runs physics and replicates state back. Accept input lag over trust problems. |
+| AI, signals, switches, time | Host-authoritative and replicated. Guests suppress their own AI, dispatcher and clock. |
+| Driver handover | Empty seat = first come. Host can always reclaim. If the driving guest disconnects, control returns to the host; if the host is absent from the cab the train gets an emergency brake application. |
+| Remote train rendering | Real `RVM_*` vehicle actors spawned kinematic (03 strategy B), visible controls driven through VirtualHID. |
+| Mod language | **C++ UE4SS mod** for the product; Lua stays for prototyping and the debug bridge. |
+| Players | Up to 8 per session. |
+| Platforms | PC only. Linux/Proton is a first-class target (the maintainer's setup). |
+| Spectator mode | HTTP-API-only clients may join as map spectators (no in-game presence). |
+| Entitlements | **Honest-client check**: the client reports installed + licensed route/loco DLC (Steam local API + asset presence); the host refuses joins that lack the route or any vehicle currently spawned. Not forgery-proof by design. |
+| Mod sync | Host → guest sync of the coop mod version/config and **data-only** content (liveries, reskins, scenario data). Never DLLs or Lua. Version mismatch = refuse join with a download hint. |
+| Anticheat | Host validates every guest message (plausible movement, rate limits, no spawn/teleport/cheat requests at all). Guests also sanity-check the host and leave with a warning on impossible or malformed updates. |
+| Invites v1 | Join code typed in-game, `tswcoop://` URI + web link, Steam overlay invites. Discord later. |
+| First test route | Training Centre (Free Edition) until a second licensed install exists. |
+| Release | `github.com/Bluscream/tsw-coop`, MIT. |
+
+## Networking: what OpenOMSI does, and what we do
+
+OpenOMSI (OMSI 2 rewrite in Rust) runs the host as the server over UDP
+(LAN port 27015). For internet play it combines public STUN (Google,
+Cloudflare) for address discovery, UPnP port mapping, the public ntfy.sh
+service as a rendezvous channel for the session code, and, when all of
+that fails, downloads and runs `cloudflared` to open a tunnel; the joiner
+hellos every candidate address at once and keeps the first that answers
+(10 s timeout). It also has a server browser and TeamSpeak-style voice.
+Its multiplayer is widely considered rough, and the tunnel/ntfy chain is a
+large part of why: four third-party dependencies in the join path.
+
+Decision for tsw-coop: **the host PC is the authority, but the transport
+is a relay** (the Rust relay in `server/`, run on the maintainer's NAS or
+a small VPS, self-hostable by anyone). The join code is a relay session
+id. Reasons:
+
+- No port forwarding, UPnP, STUN or tunnel binaries; the join path is one
+  outbound WebSocket for everyone, which also works through Tailscale and
+  corporate NAT.
+- The relay is dumb (fan-out, rate limits, replay for late joiners) so
+  cheating still has to get past the host, not the relay.
+- A direct LAN mode (`--lan-host`, guests connect to the host's IP) stays
+  as a zero-infrastructure option; NAT punching is explicitly out of
+  scope for v1.
+- Join code formats: `TSW-XXXX-XXXX` typed in-game, `tswcoop://join/<code>`
+  and `https://<relay>/j/<code>` (web page that opens the URI), Steam rich
+  presence `connect` string carrying the same code.
+
+## What this changes in the architecture (03)
+
+- L1 capture now runs **only on the host**, and captures everything that
+  must be replicated: own train, every AI consist, signal and switch
+  states, clock, weather, the formation list.
+- L3 ghosts on guests cover the host's train *and* its AI traffic.
+- New layer **L5 Players**: pawn replication (position, animation state,
+  seat), seat arbitration, and input forwarding from the driving guest to
+  the host's `VirtualHID` components.
+- New layer **L6 Lobby**: host/join flow, join codes, entitlement and
+  version handshake, data-pack sync, in-game overlay (ImGui).
+- Guests must **suppress** their local AI service spawning, dispatcher
+  clock and weather before the host state arrives (candidates:
+  `ts2.dbg.LoadTimetable` with an empty timetable, `AISetDrivable`,
+  removing AI formations after load, `SetWorldDateTime`).
+
+## Revised milestones
+
+| # | Milestone | Exit criterion |
+| --- | --- | --- |
+| M1 | Loader + dumps | done (3d9c26e) |
+| M2 | Telemetry | host-side capture of own train + AI consists + clock + weather at 10 Hz, C++ mod, numbers match HTTP API |
+| M3 | Relay + lobby | host opens lobby, guest joins by code through the relay, version/entitlement handshake, overlay shows players |
+| M4 | Guest world | guest loads the same route in a quiet state (no local AI), sees the host's train and AI as kinematic ghosts with lights/doors/pantos |
+| M5 | Players | walking pawns replicated, boarding and sitting, seat arbitration, guest drives host's train via input forwarding |
+| M6 | Polish | data-pack sync, Steam/URI invites, anticheat validation both ways, reconnect, installer |
+| M7 | Spectator + extras | HTTP-API spectator client, Discord invites, text chat |
+
+## Open questions carried forward
+
+- Input forwarding latency: is 50–100 ms round trip acceptable for a
+  driving guest, or does the host need to run guest inputs with a small
+  client-side prediction on throttle/brake levers (visual only)?
+- How to suppress a guest's AI cleanly without breaking the route's
+  scenario state the host expects.
+- Passenger pawn class to use for guests (`TS2DefaultDriverPawn_C` vs a
+  passenger pawn) and whether the game's seat manager can seat a pawn it
+  did not spawn.
+- Entitlement: exact Steam local API call available from inside the game
+  process under Proton (`ISteamApps::BIsDlcInstalled` + `BIsSubscribedApp`).
