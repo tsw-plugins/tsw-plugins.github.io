@@ -201,6 +201,26 @@ widget through its BP functions. Defer it until the runtime-built UMG proves too
 - Bridge: `tswcmd toast [info|warn|error] <text>`. `drive ready` and `drive spawn` now report their
   outcome as a toast.
 
+## Built: runtime text menu (option B), 2026-10-17
+
+`mod-lua/TswCoopDebug/Scripts/menu.lua`, verified in scenario A with window screenshots (build 886):
+
+- Tree: `WidgetBlueprintLibrary:Create(pc, GenericDialogWidget, pc)` as the host (UUserWidget is
+  abstract), then `StaticConstructObject` into `host.WidgetTree`: CanvasPanel (set as
+  `RootWidget`) -> Border (black, 0.8 alpha) -> VerticalBox -> one TextBlock per row,
+  `AddToViewport(1000)`. Colours via `SetColorAndOpacity({SpecifiedColor, ColorUseRule=0})`.
+- Keys: F9 opens/closes, Up/Down move, Enter runs the row's bridge command (the menu stays open so
+  the toast can be read). F7/F8 are bound by the game; F9 is free.
+- Keys are polled from the 30 ms game-thread pump with `pc:IsInputKeyDown` and edge detection.
+  A synthetic tap (omni-mcp `interact`) is too short to be seen; a real key or an xdotool
+  keydown/keyup 150 ms apart is. Verified for F9 and Down; Enter was verified via the bridge only.
+- Bridge: `tswcmd ui [open|close|toggle|up|down|select|state]`.
+- A mod reload starts a new Lua state but leaves the old widget drawn. `menu.sweep()` (on the first
+  poll and on every open) removes `GenericDialogWidget`s whose root is named `TswCoopMenuCanvas` and
+  that are still in the viewport; removed widgets stay valid until GC, hence the viewport check.
+- Rows use font size 14 (`SetFont` with the TextBlock's own font info). The sweep viewport filter
+  and the font size were written while the game was updating and are not yet verified in game.
+
 ## Recommended first prototype
 
 Do it in Lua through the bridge (`tswlua -f`), and promote it into `TswCoopDebug` once it works:
