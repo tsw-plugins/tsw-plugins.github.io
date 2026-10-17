@@ -58,7 +58,7 @@ reference for reading player state in-process:
 `TS2DebugFunctionLibrary` and `KismetSystemLibrary` default objects are also
 used. Build is xmake + MSVC with UE4SS as a submodule.
 
-### `LiamMartens/tsw-controller-app` — direct cab control
+### `LiahMartens/tsw-controller-app` — direct cab control
 
 Supports TSW **5/6/7** per its README (the newest evidence that UE4SS mods
 run on TSW 7). Its `tsw-controller-mod/ue4ss-mod` C++ mod drives cab
@@ -138,7 +138,7 @@ layer needs, but it is closed source.
 - https://www.trainsimcommunity.com/mods/c3-train-sim-world/c109-other/i5712-tsw-live-historical-weather
 - https://github.com/vanlueckn/TSW5Mods
 - https://github.com/vanlueckn/RE-UE4SS-TSW
-- https://github.com/LiamMartens/tsw-controller-app
+- https://github.com/LiahMartens/tsw-controller-app
 - https://forums.dovetailgames.com/threads/i-created-a-mod-software-to-directly-control-in-game-trains-using-a-joystick-no-raildriver.90609/
 - https://forums.dovetailgames.com/threads/train-sim-world-api-support.94488/
 - https://thirdrails.org/Downloads/TSW_API_Unofficial_Documentation.pdf

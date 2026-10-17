@@ -5,7 +5,7 @@
 | # | Milestone | Needs a game install? | Exit criterion |
 | --- | --- | --- | --- |
 | M0 | Research (this repo) | no | Docs 01–04 reviewed |
-| M1 | Loader bring-up on TSW 7 | **yes** | Stock UE4SS loads, no crash through main menu → journey → exit; object dump + UHT headers committed to `dumps/` |
+| M1 | Loader bring-up on TSW 7 | **yes** | Stock UE4SS loads, no crash through main menu → journey → exit; object dump + UHT headers committed to `dumps/`. Partly done: the tsw-controller-app UE4SS mod already runs on the maintainer's install, so the loader side is proven; the dump is still outstanding |
 | M2 | Telemetry mod | yes | C++ mod logs `TrainSnapshot` at 10 Hz for the own train, incl. tile + XYZ + lat/lon + consist classes; numbers match the HTTP API |
 | M3 | Relay + two clients | yes (two installs or two PCs) | Snapshots round-trip through the relay; a debug overlay lists remote players |
 | M4 | Ghosts A | yes | Remote consist visible as static meshes moving smoothly on the right track |
