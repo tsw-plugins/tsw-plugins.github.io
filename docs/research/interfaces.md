@@ -124,9 +124,15 @@ Reloading the mod (`tswcmd reload`) unregisters every hook it registered.
 - **Reverser key on a spawned loco did not go in** (`drive ready` BLOCKED after 2 presses, begin
   returned true). Not resolved: the game was paused at that time (see below), so the result is
   invalid and must be repeated.
-- **Scenario end pauses the game.** After the AI takeover/handback the scenario showed its end screen
-  ("Szenario wiederholen / Hauptmenü") and the game was paused (`IsGamePaused` true); every control
-  then "stalled". Check `IsGamePaused` and a screenshot before blaming a probe.
+- **Spawning derailed the scenario train and ended the scenario.** `B.spawnFormation(…, 8000)`
+  places the consist 80 m along the track from the pawn, onto track that was already occupied (the
+  scenario's train stood there after the handback). blu saw the train jump and the game ended the
+  scenario with "entgleist" (derailed); the end screen ("Szenario wiederholen / Hauptmenü") paused
+  the game (`IsGamePaused` true) and every control then "stalled". The `ready` failure on the
+  spawned loco happened in that state and must be repeated. Rules: never spawn onto track near
+  other vehicles in a running scenario (check occupancy first, or spawn in free roam on an empty
+  siding), and check `IsGamePaused` plus a screenshot before blaming a probe. The `spawner` variant
+  (ATrainSpawner at the pawn's own position) was not run for the same reason.
 
 ## Recommendations
 
