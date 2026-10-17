@@ -332,13 +332,36 @@ Mod and log: `dumps/tsw7-886/experiments/far-4/`.
 Re-read the origin when `WorldOriginChangedDelegate` fires or on every
 `GetWorldOriginLocation` poll (cheap).
 
+## 10d. Multi-car loco ghost (2026-10-17)
+
+Mod, log and screenshot: `dumps/tsw7-886/experiments/loco-5/`.
+
+- `SpawnFormation` with `FRM_TTC_Class323` 120 m from the pawn produced the
+  three cars `RVM_TTC_Class323_DMS_A_C`, `_PTS_C`, `_DMS_B_C`, each with its
+  `RVV_*` view actor, spaced ~23 m apart along the track direction.
+- Physics state differed per car: the two driving cars came up
+  `Kinematic/Kinematic`, the trailer `Disabled/Disabled` (state 0, mode 3).
+  A ghost implementation must not assume one state; set all cars explicitly.
+- Sliding all three view actors by 30 cm every 100 ms for 12 s (3 m/s)
+  worked, the set moved as a unit past the platform next to the player's
+  real 323, no crash, no snap-back. The game thread tolerated a 100 ms Lua
+  loop with three `K2_SetActorLocation` calls without visible hitching.
+- Wheel animation is **unconfirmed**: the only components matching
+  wheel/bogie/axle by name on the DMS_A view actor were `ISM_WheelBlur` and
+  `LC_WheelSlipFault` (233 components in total), and their rotation did not
+  change. Real wheel rotation is presumably driven from the model's
+  simulation speed, which is 0 while kinematic, so expect static wheels
+  until the ghost layer rotates them itself (or until `SetOverrideSpeed`
+  is found to work in a non-kinematic state).
+
 ## 11. Next verification steps (need the game)
 
 1. Find the far-to-local conversion (world far origin) so remote far
    positions can be applied to local view actors; verify with the player's
    own vehicle (`GetPosition()` vs its view actor location).
-1b. Spawn a loco (not a wagon) kinematic, move its view actor, and check
-   that bogie rotation, doors and lights still animate.
+1b. Identify the wheel components on a `RVV_*` view actor (dump its
+   component list) and find what rotates them; try the `RunningActivePreset`
+   with `SetOverrideSpeed` on a non-kinematic ghost.
 2. Read `URailVehicleComponent::GetWorldTransform()` for the player's
    vehicle at 10 Hz and compare with `DriverAid.PlayerInfo.geoLocation`.
 3. Dump a real route (not the Training Centre) to see how many
