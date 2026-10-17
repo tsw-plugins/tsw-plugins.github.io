@@ -202,9 +202,58 @@ Also measured: `FNetworkRibbonLocation.RibbonLocation` is a 0–1 fraction of th
 18.6 m ribbon here), extrapolated linearly outside that range, and
 `FindTrainSpawnLocationNearDriverPawn` returned ribbon ends (1.0) for every distance tried.
 
-**Rule:** spawn test trains only in timetable or scenario mode. On a DLC route,
-`ts2.dbg.LoadTimetable /<Route>_Route_Gameplay/Timetable/<Timetable>` gives a timetable session;
-the route's timetables appear in the asset registry once the route has been opened once.
+**Rule:** spawn test trains only in timetable or scenario mode. `tswcmd play <route> t1` gives a
+timetable session on any installed route (next section).
+
+### Starting content without the menus (14:18–14:27)
+
+`UDLCManagementFunctionLibrary` knows every installed route before any of it is mounted, and can
+mount a route's content on demand. With that, one bridge command (`tswcmd play`,
+`mod-lua/TswCoopDebug/Scripts/play.lua`) starts any timetable or scenario.
+
+- **The catalogue.** `GetCachedContentWithRouteList(pc, out)` fills `out` with one `FCachedContent`
+  per installed route. Read each entry with `out[i]:get()`; the nested arrays index directly
+  (`c.Timetables[j]`, with no `:get()`). Each route has `DLCName`,
+  `RouteDefinition.RouteDisplayName`, `Timetables` (`Name`, `CachedServices`) and
+  `ScenarioDefinitions` (`DisplayName`; `ScenarioType` is 0 for a scenario, 1 for training).
+  `GetPathOfSoftObject(x.SoftObject).AssetPathName` gives the asset path.
+
+  The five routes installed on 2026-10-17:
+
+  | Route | Timetables | Scenarios |
+  | --- | --- | --- |
+  | TrainingCentre | 1 | 31 |
+  | DresdenLeipzig | 1 | 13 |
+  | FrankfurtFulda | 1 | 14 |
+  | FrankfurtSBahn | 2 | 9 |
+  | LeftRhine | 1 | 10 |
+
+- **Mounting.** Pass that same cached struct to `RequestContentLoadForTimetableOnlySynchronous(pc, tt)`
+  or `RequestContentLoadForScenarioSynchronous(pc, sc)`. Both return true at once.
+  `GetActiveMountPoints` still lists nothing afterwards, but the load that follows works.
+- **Loading.** For a timetable, use `ts2.dbg.LoadTimetable <asset path>`. For a scenario, call
+  `LoadAsset(path)` and then `TS2GameplayFunctionLibrary.LoadScenario(pc, def)`. Each takes about
+  50 s to reach the cab or the platform.
+
+  Before the mount step, a DLC timetable loaded only from inside a world of the same route.
+
+Verified, each checked with `GetCurrentRoute`/`GetCurrentScenario`/`GetTimetable` and `status`:
+
+| Start from | Command | Result |
+| --- | --- | --- |
+| main menu | mount + `LoadTimetable` FrankfurtSBahn reduced | timetable session, 662 vehicles |
+| Frankfurt S-Bahn world | `LeftRhine` scenario A "Kalter Stahl" | scenario running, BR 110 drivable, 237 vehicles |
+| Left Rhine scenario | `tswcmd play dresden t1` | Leipzig–Dresden timetable, 1277 vehicles |
+| main menu (`tswcmd menu`) | `tswcmd play fulda testzug` | scenario ScC, Vectron cab, first objective shown |
+
+A timetable session puts the player on foot at the route's default spawn. To drive a particular
+service, use `ts2.dbg.JumpToService` or `drive spawn`.
+
+Free Roam has no entry point yet. `UDriveModeSettings` (`FrontEndDriveModeSettings` on the game
+instance) has `bSandboxMode`, `Timetable`, `InitialTimetableService`, `TrainEntry` and
+`bSpawnDriving`; the front end fills these in Blueprint before it travels. No native "start"
+function was found. Spawned trains derail in Free Roam anyway (above), so timetable mode is the
+better test bed.
 
 ## Recommendations
 
