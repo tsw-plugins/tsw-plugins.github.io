@@ -196,7 +196,10 @@ widget through its BP functions. Defer it until the runtime-built UMG proves too
 - With no image every toast shows a red warning triangle, whatever the `EMessageType` (1
   Notification and 2 HelpTip looked identical). The HUD's own
   `Tool_Tips_Help_303x114` texture (loaded during play, sized for the toast's image box) gives a
-  neutral icon, so `info` passes it; `warn`/`error` keep the triangle.
+  neutral icon, so `info` passes it; `warn`/`error` keep the triangle. It is only loaded after
+  the HUD's first tooltip: walking in free roam at Frankfurt Hbf it was missing and every toast
+  had the triangle. `Icons/ico_schedule` (a clock) is loaded there and looks right, so both mods
+  try it first.
 - 5 s is too short to notice; the default is 8 s.
 - Bridge: `tswcmd toast [info|warn|error] <text>`. `drive ready` and `drive spawn` now report their
   outcome as a toast.
