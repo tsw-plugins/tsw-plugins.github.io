@@ -437,6 +437,25 @@ channel. Verified on the Training Centre:
   including ones we spawned. The player's pawn is
   `PlayerController:K2_GetPawn()`.
 
+## 10h. C++/Rust mod loads (2026-10-17)
+
+The probe built in `toolchain/` (C++ `CppUserModBase` shim + Rust
+staticlib, clang-cl/lld-link/xwin inside build-box, no MSVC) loads in the
+game: `Starting C++ mod 'TswCoopProbe'`, `constructed, rust abi version 1`,
+`StaticFindObject -> Class /Script/CoreUObject.Object`, `rust says (51
+bytes): tswcoop rust core probe, rustc target msvc`, `on_update` ticking.
+It also survives UE4SS hot reload (Ctrl+R stops and restarts C++ mods, so
+a new DLL can be swapped without restarting the game, as long as the old
+one is not locked). STL layout mismatch between xwin's MSVC 14.44 and the
+upstream zDEV build did not bite.
+
+## 10i. Live Lua without reloads
+
+`tswlua '<chunk>'` / `tswlua -f file.lua` runs arbitrary Lua on the game
+thread through the bridge (`eval`/`lua` commands). Chunks see the UE4SS
+globals, `log()` and `B` (bridge helpers). Use it instead of editing the
+mod and pressing Ctrl+R for one-off probes.
+
 ## 11. Next verification steps (need the game)
 
 1. Find the far-to-local conversion (world far origin) so remote far
