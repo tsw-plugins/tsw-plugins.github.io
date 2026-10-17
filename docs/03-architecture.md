@@ -59,8 +59,15 @@ train, everything else is a ghost"**:
   repo carries `assets/CustomGameConfigs/Train Sim World 7/UE4SS-settings.ini`
   if any override is needed (none known for TSW 5).
 - Entry: `start_mod()` exports a `CppUserModBase`. `on_unreal_init` resolves
-  all `UFunction*`/`UClass*` handles once and caches them. `on_update` drains a
-  main-thread queue and runs L1 and L3 each frame.
+  all `UFunction*`/`UClass*` handles once and caches them.
+- **Two threads, strictly split** (verified 2026-10-17, see 05 §10j):
+  UE4SS calls `on_update` from its own loop thread, not the game thread.
+  So all UObject work (L1 capture, L3 ghost moves, L5 pawns) runs in an
+  engine-tick callback on the game thread, and drains an inbound queue of
+  already-decoded remote state there. Networking, decoding, validation,
+  interpolation maths and outbound encoding run in the Rust core on its
+  own thread and never touch a UObject. The two sides only exchange plain
+  data through lock-free queues.
 - Everything that touches UObjects runs on the game thread. The network
   thread only pushes immutable snapshots into lock-free queues (pattern taken
   from `TSW5Mods/Shared/mainthreadqueue`).
