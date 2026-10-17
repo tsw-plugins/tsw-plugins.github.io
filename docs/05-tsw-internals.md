@@ -433,6 +433,17 @@ channel. Verified on the Training Centre:
   `ADriverPawn::FinishSetupCharacterMesh(FCharacterDefinition)` with the
   route's `UCharacterCollection`. For guest avatars the mod must either
   run that pipeline or borrow a loaded NPC skeletal mesh + anim class.
+- A second `TS2DefaultDriverPawn_C` **cannot be made visible**: after
+  `FinishSetupCharacterMesh` or a manual `SetSkeletalMesh`, the pawn's own
+  logic re-hides `Mesh` and the root every tick (`bHiddenInGame` flips
+  back to true, `WasRecentlyRendered` stays false). A plain
+  `/Script/Engine.Character` spawned the same way with
+  `CH_F_Casual_02` on its `Mesh` renders immediately
+  (`WasRecentlyRendered = true`). Guest avatars therefore get their own
+  actor class (plain `ACharacter` or a mod-defined subclass), dressed with
+  the game's NPC skeletal meshes (`/Game/Core/Characters/NPC/C2020/...`,
+  75 bones, 5 LODs); animation still needs an `AnimInstance` class from
+  the NPC pipeline.
 - Pitfall: `FindFirstOf("DriverPawn")` returns whichever pawn comes first,
   including ones we spawned. The player's pawn is
   `PlayerController:K2_GetPawn()`.
