@@ -56,16 +56,26 @@ notice and title screen are screens 0–5 of one `SplashScreenWidget_C`
 `ForwardPressed`, `AdvanceToNextScreen`). `ForwardPressed` is what "press any
 key" does; calling it from Lua went safety notice → title → main menu.
 
-The native mod presses forward whenever `CanAdvance` says so (at most every
-300 ms, at most 600 presses), and stops for good once the widget leaves the
-viewport. After the last screen the widget stays alive inside the main menu
-and keeps answering `CanAdvance = true`, so it is looked up top-level only.
-On by default; the flag file `tswcoop-no-skip-intro` next to the exe turns
-it off.
+**First version (wrong): emulated "press any key".** Calling `ForwardPressed`
+every 300 ms whenever `CanAdvance` held kept the safety notice up for 73 to
+250 s (750 calls), which I misread as the main menu loading behind it. One
+real key press passed it in under 3 s, so the repeated calls themselves
+held it. Worse, the `OnForwardPressed` broadcast reached the main menu and
+opened the route selection a few seconds after the menu appeared.
 
-Runs: screens 0→1 after 6 s, 1→3 after 7 s, then the safety notice held
-for 73 s (first run) and 115 s (second run, main menu after 128.7 s and 380
-presses) despite presses, until 4 and 5 followed within a second. Likely the
-game keeps the notice up while the main menu loads behind it (not verified:
-a boot without the skip, timed the same way, would show it). The skip saves
-the key presses; it does not make loading faster.
+**Now: `AdvanceToNextScreen`, no input at all.** One call per screen, the
+next only once the index changed (or 3 s passed), done after the last
+screen. Measured 2026-10-17 19:26 UTC: screens 0, 1, 3 and 4 passed in 420,
+215 and 213 ms, **main menu 0.9 s after the widget appeared** (5.7 s after
+the DLL started), no route selection afterwards
+(`dumps/tsw7-886/experiments/skip-intro-advance/main-menu-after-0.9s.png`).
+So nothing was loading behind the notice; it only waits for input.
+
+Tried and not needed: `UTS2GameInstance::SetGameInstanceState(MainMenu)`
+(enum `EGameInstanceState`: SplashScreen 0, MainMenu 3, ...) is accepted
+(`GetGameInstanceState` reads 3 afterwards) but the splash widget does not
+react; it drives itself.
+
+The widget stays alive inside the main menu after its last screen and keeps
+answering `CanAdvance = true`, so it is looked up top-level only. On by
+default; the flag file `tswcoop-no-skip-intro` next to the exe turns it off.
