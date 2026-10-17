@@ -22,7 +22,7 @@ free. The host's simulation is the only truth.
 | AI, signals, switches, time | Host-authoritative and replicated. Guests suppress their own AI, dispatcher and clock. |
 | Driver handover | Empty seat = first come. Host can always reclaim. If the driving guest disconnects, control returns to the host; if the host is absent from the cab the train gets an emergency brake application. |
 | Remote train rendering | Real `RVM_*` vehicle actors spawned kinematic (03 strategy B), visible controls driven through VirtualHID. |
-| Mod language | **C++ UE4SS mod** for the product; Lua stays for prototyping and the debug bridge. |
+| Mod language | **Rust wherever native code is possible**, performance and player-to-player compatibility being the priority. UE4SS only offers a C++ `CppUserModBase` entry point, so the game-side mod is a thin C++ shim (lifecycle, hooks, UObject access) over a Rust core (`cdylib`: protocol, networking, replication state, validation, lobby). The relay and tools are Rust. Exceptions where another language is pragmatic: entitlement/version checks, installers, web join page. Lua stays for prototyping and the debug bridge. |
 | Players | Up to 8 per session. |
 | Platforms | PC only. Linux/Proton is a first-class target (the maintainer's setup). |
 | Spectator mode | HTTP-API-only clients may join as map spectators (no in-game presence). |
@@ -32,6 +32,19 @@ free. The host's simulation is the only truth.
 | Invites v1 | Join code typed in-game, `tswcoop://` URI + web link, Steam overlay invites. Discord later. |
 | First test route | Training Centre (Free Edition) until a second licensed install exists. |
 | Release | `github.com/Bluscream/tsw-coop`, MIT. |
+
+## Non-negotiables (maintainer, 2026-10-17)
+
+- These decisions are the written record; update this file when one
+  changes rather than letting conversation state drift. `AGENTS.md` points
+  here.
+- Polish over features: as bug- and glitch-free as possible before
+  adding scope.
+- Compatibility between players: one protocol version, one mod version,
+  one game build per session; mismatches are refused with a clear message,
+  never papered over.
+- Rudimentary anticheat from day one: nothing a guest sends can spawn,
+  teleport or crash anything on another machine.
 
 ## Networking: what OpenOMSI does, and what we do
 
