@@ -170,6 +170,12 @@ address that address is refused until the minute is over. A full session
 answers `error{code:"room", fatal:true}`. A relay without a session (the
 standalone `tsw-coop-relay`) never challenges.
 
+The same port answers `GET /status` (plain HTTP, CORS `*`, JSON; fields
+in docs/research/session-discovery.md "Query"): to anyone for a public
+session, otherwise only with `?secret=<hex of the invite's secret>` (403
+without). The standalone relay answers 404. Players are counted over all
+rooms, the host first in `names`; `route`/`timetable` are the host's.
+
 ### `joined` / `left`
 
 ```json
