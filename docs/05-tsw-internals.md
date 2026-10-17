@@ -478,6 +478,30 @@ uses) and does all capture there. UE4SS frees that callback a few seconds
 after removal, so the mod's destructor waits up to 8 s before the DLL
 unloads; Ctrl+R pauses briefly because of it.
 
+## 10k. C++ telemetry mod in game (2026-10-17, experiment cpp-telemetry-7)
+
+- `mod/` (Rust core + C++ shim) loads, registers its engine-tick callback
+  and writes one protocol `snapshot` per 100 ms to
+  `ue4ss/tswcoop/telemetry-cpp.jsonl`: 104 vehicles in Training Centre
+  scenario A, measured interval 100.0 ms (min 74, max 122), about 22 KB
+  per line. Ran 5+ minutes without a problem.
+- UE4SS hot reload (Ctrl+R) works with it: `shut down after 672 lines`,
+  restart, `line 1` again within 0.3 s, game unaffected.
+- **Crash on the first run** was not in the C++ mod. Three seconds after
+  the scenario loaded, UE4SS faulted (`EXCEPTION_ACCESS_VIOLATION` at
+  0x3a5) in `luaH_set` <- `LuaType::push_enumproperty` <-
+  `handle_unreal_property_value`, i.e. a Lua mod reading an enum property.
+  The Lua telemetry prototype reads `SimPhysicsEnabledState` (an enum) on
+  every sample and had just started tracking a train. With it disabled
+  the game is stable. It ran for hours alone last night, so whether the
+  crash needs both mods at once is unconfirmed. Rule until then: no Lua
+  enum property reads in hot loops; the Lua telemetry prototype stays off.
+  Minidump and context in `experiments/cpp-telemetry-7/`.
+- Symbolising UE4SS frames: `llvm-symbolizer-19 --obj=UE4SS.dll
+  0x180000000+offset` inside build-box, with `UE4SS.pdb` next to the DLL.
+- Ctrl+R sent through the GUI tool is unreliable (2 of 3 attempts did
+  nothing); check for `All mods re-installed` in UE4SS.log after each one.
+
 ## 11. Next verification steps (need the game)
 
 1. Find the far-to-local conversion (world far origin) so remote far
