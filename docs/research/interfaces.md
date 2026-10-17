@@ -76,6 +76,24 @@ Reloading the mod (`tswcmd reload`) unregisters every hook it registered.
   did that is unknown (the levers were not recorded before the call). The rest
   presumably runs as gameplay tasks that need an AI controller. `drive ready`'s recipes stay.
 
+### AI takeover and handback (12:24–12:28, fresh scenario A, `native/04` + `05`)
+
+- **Takeover works.** `SetServiceDriverPermission(PlayerService, Both=2)` + `pc:ForceRelinquishService`
+  moved the player out of the cab at once; an `AIC_RailVehicleControlBase_C` took the train, ran its
+  service setup in ~6 s (state 1 → 3 CompletedSuccess; it put the reverser key in and the reverser
+  forward), and drove: 0 → 7.5 m/s in ~25 s (target 8.3), later reversed (target −8.3 m/s).
+- **The AI drives with simple physics, not the cab.** While it accelerated, `Throttle_F` stayed 0,
+  tractive effort read 0 N, and the main reservoir sat frozen at 9.72 bar for over a minute. The
+  simulation is not what moves an AI train, so AI driving tells us nothing about the cab or
+  interlocks, and it is no shortcut for readying a train for the player.
+- **Handback works.** Permission `Player=0` + `pawn:SetControlledDrivable(train, …)`: the AI
+  controller was gone within 2 s, the player owned the service and sat in the cab again. No shutdown
+  sequence ran (battery, pantograph, breaker stayed up). The train kept its speed (−5.4 m/s,
+  coasting through the simulation now), then stopped within ~4 s at t+18 s (cause not identified).
+  Afterwards: train and dynamic brake 0.2, traction locked; `drive ready` fixes that.
+- Use: AI takeover can provide moving test traffic or hand a service to the AI while a co-op player
+  is away. It does not exercise the cab.
+
 ## Recommendations
 
 **Test automation:** keep UE4SS Lua (`drive`) as the driver: it reaches every control, works
@@ -91,5 +109,5 @@ lock), but only reaches the active cab.
 
 ## Open
 
-- Native probes 04/05 (AI takeover and handback), 07 (`ApplyVHIDPreset`), 08 (spawn running) not run.
+- Native probes 07 (`ApplyVHIDPreset`; the BR 146 presets are only lights) and 08 (spawn running) not run.
 - Whether a replayed `BeginIncreasingVHIDComponent` RPC from Lua is accepted (input probe 06).
