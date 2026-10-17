@@ -37,12 +37,17 @@ session scratchpad (`avatar-spike.lua`, `avatar-dress.lua`, `avatar-snap.lua`).
 - `Stand/CH_M_Stand1_Idle*`, `CH_M_Stand5_Idle2` (loaded at Fulda).
 - `Carriage/CH_M_CarSit1_Idle*`, `Sit/CH_M_BenchSit*` (seated).
 
-UE4SS `LoadAsset` returns the package for an already loaded sequence but
-**fails for every `Locomotion/` asset** (package does not load, nothing is
-found afterwards), although the pak index lists them next to the stand
-idles. Not yet tried: `LoadAsset_Blocking` from the native mod (the path
-that loads ghost classes of other routes), or a `TSoftObjectPtr` through
-`RequestContentLoadSynchronous`.
+UE4SS `LoadAsset` fails for every `Locomotion/` asset (returns an invalid
+object, nothing is loaded). The engine's own loader works:
+`KismetSystemLibrary::LoadAsset_Blocking(Conv_SoftObjPathToSoftObjRef(MakeSoftObjectPath("/Game/.../CH_M_Walk_Loop.CH_M_Walk_Loop")))`
+returns the `AnimSequence`, and `Mesh:PlayAnimation(walk, true)` makes the
+dressed character walk in place (`walk-loop.png`); head and hair follow
+through the master pose. The same loader chain (class variant) already
+loads ghost view classes in `mod/native`.
+
+The mesh's forward is +Y: the body needs a relative yaw of -90° to face the
+actor's forward, and its pivot is at the feet, so it sits at minus the
+capsule half height (88 cm) below the actor.
 
 ## Plan for `mod/native`
 

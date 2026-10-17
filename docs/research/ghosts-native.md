@@ -82,7 +82,10 @@ BR 146 + 7 mineral wagons, lifted 3 m to tell it from real trains). The log
 shows the consist, both classes loaded by path (137 ms and 35 ms, content of
 another route), and 8 cars spawned in 50 ms; positions followed the recording
 along the track, 15 m apart; a screenshot from beside the track shows the
-wagons passing. Not yet seen: a flipped car with a real `flipped` flag (the
+wagons passing. When the replay host's run ended, the relay reported "host
+left (Closed)", the guest logged "ghost: host gone, removing 8 cars" in the
+same millisecond, and a probe a minute later (after garbage collection)
+found no ghost view actor left. Not yet seen: a flipped car with a real `flipped` flag (the
 replayed consist had none, so two reversed cars of the recorded train were
 drawn backwards), liveries (`ReskinID` is not applied), lights, doors and
 pantographs (the view actor's animations are driven by its model, which a
