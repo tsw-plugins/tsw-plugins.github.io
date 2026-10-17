@@ -31,9 +31,16 @@ asks for them.
 
 ```json
 {"type":"hello","proto":0,"mod":"tsw-coop/0.1.0","game":{"build":886,"name":"Train Sim World 7"},
- "player":{"id":"<uuid>","name":"blu"},"room":{"route":"TrainingCentre","timetable":"freeroam"},
- "mode":"full","encodings":["snap1"]}
+ "player":{"id":"<uuid>","name":"blu","country":"DE","level":42},
+ "room":{"route":"TrainingCentre","timetable":"freeroam"},"mode":"full","encodings":["snap1"]}
 ```
+
+- `player.country` (optional): ISO 3166-1 alpha-2 from the player's system
+  region, for a flag next to the name; anything but two letters is dropped,
+  lower case is upper-cased. `player.level` (optional): the game's driver
+  level (the player profile's, as Dovetail Live shows it); above 9999 it is
+  dropped. Both travel on in `welcome.players` and `joined`. Not checked
+  against anything: they are what the player's game says.
 
 - `proto` must equal the relay's protocol version (0) or the relay answers
   `error{code:"proto"}` and closes.
@@ -101,13 +108,13 @@ Added 2026-10-17 as an additive v0 message (old relays reject it with
 | `seq` | int | Monotonic per client, shared with the other messages. |
 | `far` | `[f64;3]` | Pawn root in far space, centimetres, UE axes (the convention of `snapshot.vehicles[].far`). |
 | `yaw` | float | Facing in degrees, `[0, 360)`, 0 = +X, 90 = +Y. |
-| `state` | string | `idle`, `walk`, `run`, `jump` (in the air) or `seated`. Optional, default `idle`. |
+| `state` | string | `idle`, `walk`, `run`, `jump` (in the air), `seated` or `crouch`. Optional, default `idle`. |
 | `vehicle` | string | Optional. `RailVehicleID` the player sits or rides in. |
 | `vel` | `[f64;3]` | Optional. cm/s, for extrapolation between updates. |
 
 - Send at 5–10 Hz while moving; a standing player may drop to 1 Hz.
 - Relay checks: every `far` component finite and within ±1e9 cm, `yaw` and
-  `vel` finite, `vehicle` 1–128 characters, `state` one of the five; any
+  `vel` finite, `vehicle` 1–128 characters, `state` one of the six; any
   failure is a non-fatal `error{code:"schema"}` and the message is dropped.
 - Rate: 30/s per player, its own budget (not shared with `snapshot` or
   `event`/`chat`); excess is dropped silently like snapshots.
@@ -169,6 +176,22 @@ a connection is fatal, and after 5 wrong proofs in a minute from one
 address that address is refused until the minute is over. A full session
 answers `error{code:"room", fatal:true}`. A relay without a session (the
 standalone `tsw-coop-relay`) never challenges.
+
+Bans (host: `ban = <player id or IP>, …` in `tswcoop.cfg`; standalone
+relay: `--ban`) are checked before anything else: a banned player id or
+address gets `error{code:"auth", fatal:true}` "you are banned from this
+session." An IPv4-mapped IPv6 address counts as the IPv4 address.
+
+**What the relay logs** (the host: `server:` lines in
+`tswcoop-native.log`; standalone: stderr), with connection, address,
+player id and name: every join (country, level, mod, game build, route),
+leave with its reason (`closed`, `timeout`, `kicked`), idle and hello
+timeouts, every refusal (protocol mismatch, invalid hello, wrong
+password, too many tries or failures from the address, banned, session
+full), a duplicate id replacing a connection, a mod version or game build
+different from the host's (admitted, logged as a warning), chat text (one
+line, at most 200 characters) and dropped messages over the rate limit.
+Proofs and passwords never.
 
 The same port answers `GET /status` (plain HTTP, CORS `*`, JSON; fields
 in docs/research/session-discovery.md "Query"): to anyone for a public
