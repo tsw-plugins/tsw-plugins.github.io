@@ -467,6 +467,17 @@ thread through the bridge (`eval`/`lua` commands). Chunks see the UE4SS
 globals, `log()` and `B` (bridge helpers). Use it instead of editing the
 mod and pressing Ctrl+R for one-off probes.
 
+## 10j. `on_update` is not the game thread
+
+UE4SS calls `CppUserModBase::on_update` from its own loop thread, which
+sleeps 5 ms between mod updates (`UE4SS/src/UE4SSProgram.cpp`), not from
+the game thread. UObject work there is the same off-thread mistake that
+crashed the first Lua spawn test. The C++ mod therefore registers a
+per-frame engine-tick callback (the hook Lua's `ExecuteInGameThread`
+uses) and does all capture there. UE4SS frees that callback a few seconds
+after removal, so the mod's destructor waits up to 8 s before the DLL
+unloads; Ctrl+R pauses briefly because of it.
+
 ## 11. Next verification steps (need the game)
 
 1. Find the far-to-local conversion (world far origin) so remote far
