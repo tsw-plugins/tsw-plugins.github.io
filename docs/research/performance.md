@@ -131,6 +131,21 @@ So a single object-array walk is a whole frame's budget in a heavy session: this
 what `FindFirstOf` cost per poll. The Rust capture must find vehicles once and keep them, never
 walk per capture.
 
+### The telemetry capture in Rust (19:30–19:38)
+
+The capture ported to `mod/native` (same core session, sliced sweep, cached vehicles, calls
+through `ProcessEvent` at vtable slot 67) ran next to the C++ shim in one session, same start:
+
+| | native Rust | C++ shim (UE4SS) |
+| --- | --- | --- |
+| capture cost, 1024 vehicles | 2.9–3.1 ms avg, 4.9 ms max | 6.4–6.6 ms avg, 9.9 ms max |
+| capture cost, main menu | 0.13 ms | 0.46 ms |
+
+Game speed 100, 99, 100, 100, 100 % with both running. Fifty lines of each file paired by game
+clock: the same 1024 vehicles in every pair (51 200 vehicle pairs, none only on one side), no
+class name differs, player and world origin identical, stationary vehicles within 0.08 cm.
+Moving ones differ by the time between the two captures within the same clock second.
+
 ## Community reports on TSW performance under Linux (researched 2026-10-17)
 
 No report anywhere describes a Proton, DXVK/VKD3D or Engine.ini tweak that fixes a slowdown
