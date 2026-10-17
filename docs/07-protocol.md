@@ -42,6 +42,8 @@ asks for them.
 - `encodings` (optional) lists binary encodings the client speaks; the
   relay echoes the ones it uses in `welcome.encodings`. Only `snap1`
   exists ([Binary snapshots](#binary-snapshots-snap1)).
+- `auth` (optional) is the join proof for a player-hosted session
+  ([Joining a hosted session](#joining-a-hosted-session)).
 - `room.route` is the route's content id (`URouteDefinition` name once
   known; the map package name until then). `timetable` is the timetable or
   scenario id, or `freeroam`.
@@ -147,6 +149,27 @@ Followed immediately by the stored `consist`, last `snapshot` and last
 `avatar` of every other player in the room (so a late joiner can spawn
 ghosts and avatars at once; `presence` joiners get only the consists).
 
+### Joining a hosted session
+
+A relay run by a host (the mod's own server) admits only invite holders.
+Its answer to a `hello` without `auth` is
+
+```json
+{"type":"challenge","nonce":"5f0c…(32 hex)"}
+```
+
+and the client sends `hello` again with
+`auth = hex(HMAC-SHA256(key, nonce ‖ 0x00 ‖ player.id))`, where
+`key = SHA256("tsw-coop join v1" ‖ secret ‖ password)`: `secret` is the
+invite's 16 bytes, `password` the session password or empty
+(`tsw-coop-session::proof`). The nonce is new per connection, so a proof
+is good for that connection only; neither secret nor password crosses the
+wire. A wrong proof is a non-fatal `error{code:"auth"}`; the third one on
+a connection is fatal, and after 5 wrong proofs in a minute from one
+address that address is refused until the minute is over. A full session
+answers `error{code:"room", fatal:true}`. A relay without a session (the
+standalone `tsw-coop-relay`) never challenges.
+
 ### `joined` / `left`
 
 ```json
@@ -230,7 +253,7 @@ The first snapshot on a stream is a keyframe of about 2.3–2.6 KB.
 | `event`/`chat` rate | 10/s per player |
 | vehicles per consist or snapshot | 64 |
 | message size | 64 KiB |
-| players per room | 32 |
+| players per room | 32 (a hosted session: its `max_players`) |
 | idle timeout | 30 s without any message → `left{reason:"timeout"}` |
 | `hello` timeout | 5 s after connect |
 
