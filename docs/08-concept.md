@@ -120,5 +120,12 @@ id. Reasons:
   and `K2_DestroyActor` leaves a stale occupancy GUID. Signal aspects are
   therefore replicated from the host, ghosts are pooled per session, and a
   clean despawn path is still to be found.
+- Jumping (added 2026-10-17, `mod-lua/TswCoopDebug/Scripts/jump.lua`,
+  optional with `tswcmd jump on|off`): Space calls `Jump()` on the on-foot
+  driver pawn. Photo mode moves from Space to O. The game's own
+  movement does the rest (about 1.2 m). For co-op the jump must reach the
+  other players: the pawn position travels in snapshots already, but guest
+  avatars need the falling/landing state to animate it. Port it to the Rust
+  mod with the M5 player replication.
 - Entitlement: exact Steam local API call available from inside the game
   process under Proton (`ISteamApps::BIsDlcInstalled` + `BIsSubscribedApp`).
