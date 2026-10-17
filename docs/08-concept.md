@@ -59,7 +59,13 @@ hellos every candidate address at once and keeps the first that answers
 Its multiplayer is widely considered rough, and the tunnel/ntfy chain is a
 large part of why: four third-party dependencies in the join path.
 
-Decision for tsw-coop: **the host PC is the authority, but the transport
+**Revised 2026-10-17 (maintainer): each host carries its own session's
+traffic; guests connect to the host's game directly (the relay runs inside
+the host's mod), and everything works without any central service. The
+paragraph below is the earlier decision, kept for the reasoning; the
+current design is `docs/research/session-discovery.md`.**
+
+Earlier decision: **the host PC is the authority, but the transport
 is a relay** (the Rust relay in `server/`, run on the maintainer's NAS or
 a small VPS, self-hostable by anyone). The join code is a relay session
 id. Reasons:
