@@ -1,6 +1,19 @@
 # Sessions: codes, public listing, query, server browser, connectivity (2026-10-17)
 
-Concept, not built. Asked for by the maintainer: hosts may list a session
+**Status 2026-10-18:** built, tested without the game (unit and loopback
+integration tests), not yet tried in game:
+- snapshot traffic (`snap1`, "Keeping the traffic small" below);
+- the invite, join proof and status document (`server/crates/tsw-coop-session`);
+- admission with secret, password and player limit
+  (`tsw-coop-relay/src/admission.rs`, docs/07 "Joining a hosted session");
+- the relay inside the host's game, `GET /status` on its port
+  (`tsw-coop-relay/src/host.rs`, `http.rs`);
+- `host =` / `join =` in `tswcoop.cfg` (`mod/native/src/hosting.rs`).
+
+Not built yet: port mapping (`portmapper`), the master and Pages site,
+short codes, iroh. The text below is the concept as decided.
+
+Originally a concept. Asked for by the maintainer: hosts may list a session
 publicly (opt-in in the mod settings), set a password and a player limit;
 a public query returns name, players, max players, MOTD and so on (like
 Steam's A2S or Minecraft's server list ping); a server browser and the
