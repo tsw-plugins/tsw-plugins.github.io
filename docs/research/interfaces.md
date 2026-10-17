@@ -149,11 +149,29 @@ Reloading the mod (`tswcmd reload`) unregisters every hook it registered.
 - **`ATrainSpawner` works** (`native/08b_spawner_clear_point.lua`, placed on the 80000 point
   184 m from the nearest vehicle): deferred spawn + `bApplyPreset`/`PresetConfig{Preset=2}` +
   `SpawnConsist()` made one BR 146 with `Preset=2`, both pantographs down. No crash.
-- **Spawned trains do not simulate.** On that loco `drive ready` got key, reverser, pantograph,
-  breaker, dynamic and train brake right, but brake cylinder 1.06 / pipe 4.61 bar / main 9.74 bar
-  never changed in over a minute (the same numbers as every spawn), transformer read 0 V, and
-  `power 0.3` gave 0 N and 0 m/s. Spawned consists stay kinematic (`SimPhysicsEnabledState=1`).
-  Turning their simulation on is open; until then they are scenery, not test trains.
+- That spawner-made loco never simulated: brake cylinder 1.06 / pipe 4.61 / main 9.74 bar frozen,
+  0 V, `power 0.3` gave 0 N. **Cause: it was never properly boarded.** `drive board` had answered
+  "no drivable vehicle matching … among 0 candidates" (the ATrainSpawner consist is not found as a
+  drivable), yet `drive diag` showed it, so the failure went unnoticed. See the next section.
+
+### What switches a train's simulation on (12:48–12:57)
+
+`RailVehicleComponent.SimPhysicsEnabledState` (0 Disabled, 1 Kinematic, 2 DynamicDirect,
+3 DynamicIndirect) and `CurrentPhysicsMode` (0 Dynamic, 1 Static, 2 Kinematic, 3 Disabled) plus
+`SimulationComponentsEnabled()` show it. Every vehicle not driven by the player is `1/2/false`:
+kinematic, simulation off, values frozen at their spawn/preset numbers (9.742 bar main reservoir
+on every preset-1/2 BR 146). No reflected function switches it; writing
+`SimPhysicsEnabledState = 2` is reverted by the game within 5 s.
+
+**Boarding switches it** (`pawn:SetControlledDrivable`, i.e. `drive board`): the boarded loco goes
+to `2/0/true` and its air starts moving at once; the previously boarded one drops back to `1/2`.
+Verified in scenario A (the scenario loco, a cold service-less loco, and a **bridge-spawned** loco on
+a point 298 m from other vehicles) and in timetable mode (a parked loco). The spawned loco was then
+`READY` in 5 s (preset 1 spawns are almost running) and made 58 kN / 1.4 m/s at power 0.3.
+
+So spawned trains are usable test trains: spawn on clear track, `drive board <name>`, `drive ready`.
+Only the boarded consist simulates; other spawned consists stay kinematic scenery (the AI moves
+them with simple physics, see the AI takeover section).
 - **Synthetic key via `CreatePressedReleasedKeyEvent` on the class default object:** no crash, no
   effect (key `L`, cab lights stayed 0.50; TSW was not focused). Not a usable input path.
 
@@ -172,5 +190,7 @@ lock), but only reaches the active cab.
 
 ## Open
 
-- How to switch a spawned consist's simulation on (`SimPhysicsEnabledState`, physics mode).
+- Whether a consist the player does not drive can be made to simulate (co-op: the host simulates
+  only its own train; guests' trains would be kinematic on the host).
+- Why `drive board` does not find ATrainSpawner-made vehicles.
 - Whether a replayed `BeginIncreasingVHIDComponent` RPC from Lua is accepted (input probe 06).
