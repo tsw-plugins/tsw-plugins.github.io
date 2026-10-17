@@ -94,6 +94,40 @@ Reloading the mod (`tswcmd reload`) unregisters every hook it registered.
 - Use: AI takeover can provide moving test traffic or hand a service to the AI while a co-op player
   is away. It does not exercise the cab.
 
+### Remaining probes (12:28–12:35)
+
+- **Controller RPCs work from Lua** (`input/06`): `pc:BeginIncreasingVHIDComponent(Throttle_F)`,
+  600 ms, `pc:EndUsingVHIDComponent` moved the lever, `IsChanging()` true and the instigator was
+  the player controller, exactly as for pad input. Locked: stopped at 0.1. Unlocked, 1.5 s: 0.44 and
+  44 kN tractive effort; `BeginDecreasing…` 2.5 s brought it back to 0. **A co-op host can replay
+  captured guest input with the very same calls.**
+- **Drag** (`input/07`, `BeginDraggingVHIDComponent` + `SetDragDeltaVHIDComponent`, and the
+  component's `BeginChangingAnalogue`/`SetPositionDeltaAnalogue`): only the first step moved the
+  dynamic brake slightly (0.80 → 0.799 with −0.05, → 0.764 with −2), later steps did nothing, and the
+  lever snapped back to 0.8. Not usable as is.
+- **Bindings** (`input/01`, `02`; output saved next to the probes): 87 of the BR 146's 166 controls
+  have no input identifier (mouse only), among them `BatteryControl_*`, `PantographSelector`,
+  `AirCompressor_*`. Keyboard: Throttle A/D, Reverser W/S, Handbrake `\` / Shift+`\`, Pantograph
+  P / Shift+P, Sand X, CabLights L. Gamepad: right trigger = throttle up.
+- `input/03`: with the cab idle, nothing is looked at or selected (mouse path inactive).
+- `input/08` (synthetic key via `CreatePressedReleasedKeyEvent`): no live menu widget in a scenario;
+  the class-default fallback (crash risk) not run.
+- `native/09`: the `ts2.dbg.Log*` commands ran, but the shipping build writes no game log
+  (`Saved/Logs` has only CrashReportClient logs), so their output is invisible.
+- **`ApplyVHIDPreset` works** (`native/07`): `FrontHeadightsBright` set HeadlightBrightness_F 1.0
+  and SignalLights_F 0 within 1 s. On the BR 146 the presets are only lights.
+- **Spawned trains come up nearly running** (`native/08`): a BR 146 from `SpawnFormation` (bridge
+  `spawn`) is `Preset=1` (RunningStopped): battery on, rear pantograph up, breaker closed, main
+  reservoir 9.74 bar, brake pipe 4.6 bar. Only the cab is not set up (key, reverser, brakes 0.2).
+  `ApplySimulationPreset(2)` on the fresh loco set `Preset=2` and kept the air (unlike on a live
+  loco), but nothing else differed.
+- **Reverser key on a spawned loco did not go in** (`drive ready` BLOCKED after 2 presses, begin
+  returned true). Not resolved: the game was paused at that time (see below), so the result is
+  invalid and must be repeated.
+- **Scenario end pauses the game.** After the AI takeover/handback the scenario showed its end screen
+  ("Szenario wiederholen / Hauptmenü") and the game was paused (`IsGamePaused` true); every control
+  then "stalled". Check `IsGamePaused` and a screenshot before blaming a probe.
+
 ## Recommendations
 
 **Test automation:** keep UE4SS Lua (`drive`) as the driver: it reaches every control, works
