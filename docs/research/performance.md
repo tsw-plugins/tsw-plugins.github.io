@@ -117,6 +117,19 @@ searches at most once a second (`mod-lua/tests/test_cached.lua`). Rule for every
 never call `FindFirstOf`/`FindAllOf` per frame or per poll; cache, and re-find only when the
 cached object goes invalid.
 
+## Rust DLL without UE4SS's mod API (15:38–15:47)
+
+`mod/native` (pure-Rust `dwmapi.dll`, UE4SS chain-loaded, TswCoopDebug only), same start:
+
+- Game speed 100, 100, 100, 100, 100 %; 61 fps game time.
+- Its census counts **1607** `RailVehicle`s, the same number the Lua `status` reports, among
+  ~425 000 live objects. One full walk with an `is_a` per object takes **18–21 ms** (2 ms in the
+  menu, 50 000 objects).
+
+So a single object-array walk is a whole frame's budget in a heavy session: this is the scale of
+what `FindFirstOf` cost per poll. The Rust capture must find vehicles once and keep them, never
+walk per capture.
+
 ## Community reports on TSW performance under Linux (researched 2026-10-17)
 
 No report anywhere describes a Proton, DXVK/VKD3D or Engine.ini tweak that fixes a slowdown
