@@ -95,7 +95,7 @@ id. Reasons:
 
 | # | Milestone | Exit criterion |
 | --- | --- | --- |
-| M1 | Loader + dumps | done (3d9c26e) |
+| M1 | Loader + dumps | done (3d9c26e); Rust+C++ mod toolchain proven in game (05 §10h) |
 | M2 | Telemetry | host-side capture of own train + AI consists + clock + weather at 10 Hz, C++ mod, numbers match HTTP API |
 | M3 | Relay + lobby | host opens lobby, guest joins by code through the relay, version/entitlement handshake, overlay shows players |
 | M4 | Guest world | guest loads the same route in a quiet state (no local AI), sees the host's train and AI as kinematic ghosts with lights/doors/pantos |
@@ -110,8 +110,15 @@ id. Reasons:
   client-side prediction on throttle/brake levers (visual only)?
 - How to suppress a guest's AI cleanly without breaking the route's
   scenario state the host expects.
-- Passenger pawn class to use for guests (`TS2DefaultDriverPawn_C` vs a
-  passenger pawn) and whether the game's seat manager can seat a pawn it
-  did not spawn.
+- ~~Passenger pawn class for guests.~~ Answered 2026-10-17 (05 §10g): a
+  second `TS2DefaultDriverPawn_C` re-hides its own mesh every tick, a
+  plain `ACharacter` dressed with the game's NPC skeletal meshes renders.
+  Guest avatars use their own actor class. Still open: animation instance
+  class from the NPC pipeline, and whether the seat manager can seat it.
+- Ghost lifecycle (05 §10f): `SpawnFormation` ghosts register in track
+  occupancy, cannot be repositioned at the physics level while kinematic,
+  and `K2_DestroyActor` leaves a stale occupancy GUID. Signal aspects are
+  therefore replicated from the host, ghosts are pooled per session, and a
+  clean despawn path is still to be found.
 - Entitlement: exact Steam local API call available from inside the game
   process under Proton (`ISteamApps::BIsDlcInstalled` + `BIsSubscribedApp`).
