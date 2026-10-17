@@ -175,6 +175,37 @@ them with simple physics, see the AI takeover section).
 - **Synthetic key via `CreatePressedReleasedKeyEvent` on the class default object:** no crash, no
   effect (key `L`, cab lights stayed 0.50; TSW was not focused). Not a usable input path.
 
+### Spawned trains derail in Free Roam (Frankfurt S-Bahn DLC, 13:29–13:45)
+
+`drive spawn` from the debug menu ended a real Free Roam ("Freies Spiel") session with the toast
+"Zugdienst fehlgeschlagen: Fahrzeug Entgleist" and the "Wohin geht es als nächstes" outro.
+`native/09_derail_watch.lua` (derail hooks + a 100 ms `IsDerailed`/speed sampler) showed the
+spawned loco derail **at 0 km/h, 0.3–6 s after boarding**, before `drive ready` touched anything:
+
+| Mode, route Frankfurt S-Bahn | Spawned + boarded | Result |
+| --- | --- | --- |
+| Free Roam, platform track 4 m from the pawn | TTC BR 146 | derailed 0.3 s after boarding |
+| Free Roam, open line 742 m out | TTC BR 146 | derailed |
+| Free Roam, open line 742 m out | route's own BR 143 (`FSN_ScA_BR143Solo`) | derailed |
+| Timetable (`S-bahnTimetable_Reduced` via `ts2.dbg.LoadTimetable`) | TTC BR 146 | fine, session continues |
+
+So it is the mode, not the route, the spot or the rolling stock. Supporting signs in Free Roam:
+the brake pipe stayed frozen at 4.61 bar while `ready` tried to release (5.03 bar and moving in
+timetable mode), and the derailed loco was found 33 m from and 11 m above where it was placed
+(a freshly spawned, unboarded one sat 2.7 m / +5.3 m from the point), so switching physics on
+throws the train rather than letting it settle. No junction was flagged `bBroken` afterwards, which
+argues against the `ConvergingJunction` derail reason. The spawner lives in
+`TimetableRuntimeExtensionLibrary`; Free Roam has no timetable runtime, which is the likely
+reason the spawned consist is not set up for physics. A derail ends the session in every mode.
+
+Also measured: `FNetworkRibbonLocation.RibbonLocation` is a 0–1 fraction of the ribbon (1.0 on a
+18.6 m ribbon here), extrapolated linearly outside that range, and
+`FindTrainSpawnLocationNearDriverPawn` returned ribbon ends (1.0) for every distance tried.
+
+**Rule:** spawn test trains only in timetable or scenario mode. On a DLC route,
+`ts2.dbg.LoadTimetable /<Route>_Route_Gameplay/Timetable/<Timetable>` gives a timetable session;
+the route's timetables appear in the asset registry once the route has been opened once.
+
 ## Recommendations
 
 **Test automation:** keep UE4SS Lua (`drive`) as the driver: it reaches every control, works
@@ -193,4 +224,5 @@ lock), but only reaches the active cab.
 - Whether a consist the player does not drive can be made to simulate (co-op: the host simulates
   only its own train; guests' trains would be kinematic on the host).
 - Why `drive board` does not find ATrainSpawner-made vehicles.
+- How to detect Free Roam from Lua, so `drive spawn` can refuse there instead of ending the session.
 - Whether a replayed `BeginIncreasingVHIDComponent` RPC from Lua is accepted (input probe 06).
