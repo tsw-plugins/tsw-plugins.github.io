@@ -278,6 +278,13 @@ at once, first answer wins (as OpenOMSI does):
   (not started from `DllMain`) and adds several MB to the DLL. Spike
   checks: build with our MSVC cross toolchain (`ring`), run under Proton,
   size.
+  **Spike 1 done (2026-10-18, `dumps/tsw7-886/experiments/iroh-spike-1`):**
+  iroh 1.3.0 builds for MSVC once `ring` gets clang-cl and llvm-lib with
+  the xwin headers (9.6 MB exe). It runs under GE-Proton11-9: loopback
+  and LAN both ways between a Proton and a Linux process, 50/50
+  datagrams, RTT median 0.15–0.28 ms, stream echo fine. Binding takes
+  about 1 s under Proton (3 ms on Linux). Still open: growth of the DLL
+  itself, inside the game process, across the internet.
 - **No hole punching in v1.** iroh punches only over an already working
   path, normally a relay; without one, two NATed peers cannot meet. The
   NAS cannot be that relay (needs UDP and TCP 443 forwarded, Cloudflare
