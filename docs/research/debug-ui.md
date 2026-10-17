@@ -218,8 +218,15 @@ widget through its BP functions. Defer it until the runtime-built UMG proves too
 - A mod reload starts a new Lua state but leaves the old widget drawn. `menu.sweep()` (on the first
   poll and on every open) removes `GenericDialogWidget`s whose root is named `TswCoopMenuCanvas` and
   that are still in the viewport; removed widgets stay valid until GC, hence the viewport check.
-- Rows use font size 14 (`SetFont` with the TextBlock's own font info). The sweep viewport filter
-  and the font size were written while the game was updating and are not yet verified in game.
+- Rows use font size 14, written in place (`t.Font.Size = 14`) before `AddToViewport`. The first
+  version round-tripped the struct through `SetFont({FontObject, FontMaterial, ...})` and crashed
+  the game twice (EXCEPTION_ACCESS_VIOLATION reading 0xffffffffffffffff, no Lua error):
+  `FontMaterial` reads back as a null UObject wrapper and `OutlineSettings` as a UScriptStruct.
+  Lesson: never pass struct fields read from a UObject back into a UFunction wholesale.
+- Verified again on a DLC route (Frankfurt S-Bahn free roam, Frankfurt Hbf): sweep removes exactly
+  the one leftover after `tswcmd reload`; real Up + Enter keys run the highlighted row;
+  `drive spawn` from the menu spawns and boards a TTC BR 146 there (the training-centre formation
+  loads on a DLC route).
 
 ## Recommended first prototype
 
