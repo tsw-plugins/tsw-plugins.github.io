@@ -103,6 +103,7 @@ Same start as above, measured from 180 s after Play, 30 s samples:
 | UE4SS, no mods, `HookAActorTick`/`HookProcessInternal`/`HookProcessLocalScriptFunction` = 0 (two sessions) | 100, 100, 100 / 100, 100, 100, 100, 100 |
 | UE4SS + TswCoopDebug only, same hooks off | 61, 62, 59, 63, 64 |
 | the same with the fix below (`102afe6`) | 100, 100, 100, 100, 100 |
+| the original setup again (every mod, hooks on, TSWControllerMod, C++ telemetry at 6.3 ms/capture), with the fix | 100, 100, 100, 100, 100 |
 | UE4SS + every mod | 51, 52, 52 |
 
 UE4SS itself costs nothing measurable. TswCoopDebug alone costs ~40 %.
