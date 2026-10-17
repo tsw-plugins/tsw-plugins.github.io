@@ -186,6 +186,21 @@ widget through its BP functions. Defer it until the runtime-built UMG proves too
 | F | Inject into pause/main menus, `ShowUtilityDebugUI` | high / not hostable | high: BP internals | n/a |
 | — | `PrintString`, `AddOnScreenDebugMessage`, `HUD:DrawText` | n/a | compiled out (Shipping) or never fires | no |
 
+## Built: toasts (option A), 2026-10-17
+
+`mod-lua/TswCoopDebug/Scripts/toast.lua`, verified in scenario A with window screenshots:
+
+- `FindNotificationDispatcher(pc)` on the class default finds the map's dispatcher;
+  `CreateAndPostNotificationTimedTyped(FText, FText, image, seconds, type)` shows the toast at the
+  left under the objective bar and returns increasing ids. Several toasts stack.
+- With no image every toast shows a red warning triangle, whatever the `EMessageType` (1
+  Notification and 2 HelpTip looked identical). The HUD's own
+  `Tool_Tips_Help_303x114` texture (loaded during play, sized for the toast's image box) gives a
+  neutral icon, so `info` passes it; `warn`/`error` keep the triangle.
+- 5 s is too short to notice; the default is 8 s.
+- Bridge: `tswcmd toast [info|warn|error] <text>`. `drive ready` and `drive spawn` now report their
+  outcome as a toast.
+
 ## Recommended first prototype
 
 Do it in Lua through the bridge (`tswlua -f`), and promote it into `TswCoopDebug` once it works:
