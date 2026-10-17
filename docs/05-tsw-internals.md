@@ -504,6 +504,9 @@ unloads; Ctrl+R pauses briefly because of it.
 
 ## 10l. Cold and dark to moving, in code (2026-10-17, Training Centre "Wagen für Wagen")
 
+> Superseded by [`research/driving-trains.md`](research/driving-trains.md) (status `drive diag`,
+> convergent `drive ready`) and [`research/ue4ss-lua-pitfalls.md`](research/ue4ss-lua-pitfalls.md).
+
 Tooling: `mod-lua/TswCoopDebug/Scripts/drive.lua`, driven by `tswcmd drive …`
 (`drive go [filter] [power]` boards, starts up and applies power in one go).
 
