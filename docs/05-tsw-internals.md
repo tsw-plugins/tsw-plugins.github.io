@@ -266,12 +266,50 @@ Mod: `dumps/tsw7-886/experiments/spawn-success-2/main.lua` (Lua, UE4SS zDEV).
 game's own path, start kinematic, and render through their view actor. No
 mesh-cloning fallback is needed for v1.
 
+## 10b. Movement experiment results (2026-10-17, same wagon)
+
+Mod: `dumps/tsw7-886/experiments/move-3/main.lua`; log excerpt and a
+screenshot alongside. Target: the kinematic wagon from the spawn run
+(`SimPhysicsEnabledState = Kinematic`, `CurrentPhysicsMode = Kinematic`).
+
+| Step | Call | Effect after 1.5 s |
+| --- | --- | --- |
+| t0 | readouts | `GetPosition()` = far (-2387.7, 46013.6, 8696.6); `GetWorldTransform().Origin` identical; model actor `K2_GetActorLocation` = (0, 0, 0); view actor `RVV_TTC_16TMineral_Wagon_C` at UE-local (408.3, -196.4, 8700.6); forward (-0.9, -0.5, 0) |
+| 1 | `URailVehicleComponent::SetOverrideLocation(far + 20 m)` | **none** (far position, view actor unchanged) |
+| 2 | `ARailVehicle::SetOverrideLocation(far + 40 m)` | **none** |
+| 3 | `view:K2_SetActorLocation(view + 20 m)` | **moved and stayed moved** for the remaining 7 s of the run; wagon visibly left its spot on the platform |
+| 4 | `SetOverrideSpeed(5.0)` for 3 s | **none** (velocity stays 0, position unchanged) |
+
+Conclusions:
+
+- The view actor (`RVV_*_C`, class `ARailVehicleView`) is an ordinary UE
+  actor in **UE-local world space** and can be driven with
+  `K2_SetActorLocation` / `SetActorTransform`. While the model is
+  kinematic nothing writes the view actor back, so a ghost can be moved
+  purely on the view side. This is strategy B's model actor with strategy
+  A's movement, and it is what M4/M5 should build on.
+- The far position of a kinematic vehicle is frozen; the override setters
+  are no-ops in this state (they presumably only act while physics runs or
+  during the game's own vault/teleport paths). Do not rely on them.
+- Far space and UE-local space differ by a large offset on this map
+  ((-2387, 46013) vs (408, -196)); the conversion lives in the model actor
+  (`GetFarMatrix`) and `UTS2DebugFunctionLibrary::LatLongToFarVector`. A
+  ghost's incoming far position must be converted to local with the local
+  world's current far origin before being applied to the view actor. How
+  to read that origin is the next thing to find (candidate: the
+  `WorldLocation : FIntVector` on `ATrackNetworkActor` / `UNetworkRibbon`
+  plus `UWorld::OriginLocation`).
+- Open: whether animations (bogies, doors, lights) on a view actor still
+  run when the model is kinematic and the view is moved externally. The
+  wagon has no such parts; test on a loco.
+
 ## 11. Next verification steps (need the game)
 
-1. Re-run the spawn with far-position readout
-   (`GetPosition`, `GetWorldTransform`, `GetViewActor():K2_GetActorLocation`)
-   before and after `SetOverrideLocation` and `SetOverrideSpeed`, and try
-   moving the view actor directly.
+1. Find the far-to-local conversion (world far origin) so remote far
+   positions can be applied to local view actors; verify with the player's
+   own vehicle (`GetPosition()` vs its view actor location).
+1b. Spawn a loco (not a wagon) kinematic, move its view actor, and check
+   that bogie rotation, doors and lights still animate.
 2. Read `URailVehicleComponent::GetWorldTransform()` for the player's
    vehicle at 10 Hz and compare with `DriverAid.PlayerInfo.geoLocation`.
 3. Dump a real route (not the Training Centre) to see how many
