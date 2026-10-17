@@ -78,7 +78,9 @@ control's `VirtualHIDChanged` handler too:
 So the event reaches the blueprint either way. Why the battery button still did not wake the cold
 loco and the parking-brake button ignored `BeginIncreaseDigital` must be **inside** the handler
 (it probably checks the input value, its previous value, or who is interacting), not a missing
-event. Open: record a human key press of the same buttons and diff it against ours.
+event. Resolved 12:18 ([interfaces.md](interfaces.md)): `ParkingBrake_Release_F` has
+`bUseDecreaseInputToOperate`, so only the decrease input operates it; `drive_ctl.press` now honours
+the flag. `BatteryControl_F` has no input identifier (`None`).
 
 ## Verified runs
 
