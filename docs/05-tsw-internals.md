@@ -354,6 +354,38 @@ Mod, log and screenshot: `dumps/tsw7-886/experiments/loco-5/`.
   until the ghost layer rotates them itself (or until `SetOverrideSpeed`
   is found to work in a non-kinematic state).
 
+## 10e. Debug bridge, console commands, scenario loading (2026-10-17)
+
+`mod-lua/TswCoopDebug` plus `scripts/tswcmd` give a UI-free control
+channel. Verified on the Training Centre:
+
+- The exe contains 489 `ts2.*` console variables/commands
+  (`dumps/tsw7-886/ts2-console-variables.txt`). Executed through
+  `UKismetSystemLibrary::ExecuteConsoleCommand` from Lua they work without
+  the in-game console: `ts2.dbg.JumpToLatLong 51.1190 6.2260` moved the
+  pawn (HTTP API confirmed the new lat/lon); `ts2.dbg.SetLocalDateTime
+  2026 10 17 21 30 0` set the clock (space-separated numbers only; ISO
+  strings are silently ignored); `ts2.dbg.SetPrecipitation 1`,
+  `SetCloudiness 1`, `SetFogDensity 0.3` changed the weather immediately
+  (screenshot in `experiments/debug-bridge-6/`).
+- `UTS2GameplayFunctionLibrary::LoadScenario(World, UScenarioDefinition*)`
+  loads a scenario from inside a map with no menu interaction (`scenario
+  TC_ScA_Def`): loading screen, new pawn, scenario objectives active.
+  Loaded `UScenarioDefinition` assets are enumerable with `FindAllOf`;
+  the Training Centre had 20 (3 scenarios + 17 tutorials).
+- `GetWorldOriginLocation` differs per spawn point ((-2796, 46210) in the
+  tutorial, (102581, -17427) in free roam, (100106, -15240) in scenario A),
+  confirming the origin must be read live, never cached across loads.
+- Not yet solved: starting a scenario **from the main menu** without UI
+  (the definitions are not loaded there; needs `LoadAsset` on the path or
+  `ts2.dbg.LoadTimetable`), and Lua float out-params (`GetActorLatLong`
+  returns zeros through the table convention; use the HTTP API or
+  `GetPosition` instead).
+- Interesting for strategy C / L4: `ts2.dbg.AIOverrideTargetVelocity`,
+  `ts2.dbg.AITargetVelocity`, `ts2.dbg.AISetDrivable`,
+  `ts2.dbg.SetTrainSpeed`, `ts2.dbg.RemoveTrainFromTrack`,
+  `ts2.dispatcher.RequestEnterDispatchedNetwork`.
+
 ## 11. Next verification steps (need the game)
 
 1. Find the far-to-local conversion (world far origin) so remote far
