@@ -239,14 +239,18 @@ the invite preview ("3/8 players, password") query hosts directly.
 
 ## Open questions for the maintainer
 
-- Pages address: create a `tsw-coop` GitHub organisation for
-  `tsw-coop.github.io`, or use the repository's project site
-  (`bluscream.github.io/tsw-coop`)?
+- ~~Pages address~~: a `tsw-coop` GitHub organisation (`tsw-coop.github.io`),
+  set up by the maintainer when the site is built (decided 2026-10-17).
 - Hole punching: worth building at all, given overlays and port mapping
   cover most homes and it needs the master as rendezvous? And may the host
   opt into n0's public iroh relays as a fallback?
-- Should the master also accept heartbeats from private sessions, only to
-  hand out short codes (the master then knows about private sessions)?
+- ~~Short codes for private sessions?~~ Decided 2026-10-17 (delegated):
+  yes, but only on request. A private session's host may press "get a
+  short code"; the master then stores just the invite and an expiry (no
+  name, no players, never listed), drops it after 90 s without a
+  heartbeat or on close, and rate-limits lookups per IP. Without that
+  button the master never learns of a private session. The full invite
+  stays the primary way to join.
 
 ## Sources
 
