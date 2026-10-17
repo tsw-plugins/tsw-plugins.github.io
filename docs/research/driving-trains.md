@@ -4,6 +4,8 @@
 
 ```bash
 tswup                          # repeat until exit 0: game running, scenario A loaded
+tswcmd drive spawn [formation] # spawn (default TTC_146_Light) on track >= 100 m from every vehicle,
+                               # board it (only the boarded train simulates) and ready it: READY in ~7 s
 tswcmd drive board BR146       # nearest other vehicle whose class contains the filter
 tswcmd drive diag              # status + verdict; `diag json` also writes ue4ss/tswcoop/diag.json
 tswcmd drive ready             # any state -> drivable
