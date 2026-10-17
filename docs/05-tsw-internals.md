@@ -303,6 +303,35 @@ Conclusions:
   run when the model is kinematic and the view is moved externally. The
   wagon has no such parts; test on a loco.
 
+## 10c. Far-space experiment results (2026-10-17)
+
+Mod and log: `dumps/tsw7-886/experiments/far-4/`.
+
+- `UGameplayStatics::GetWorldOriginLocation` returned (-2796, 46210, 0) on
+  the Training Centre. The wagon's far position (-2387.7, 46013.6, 8696.6)
+  minus that origin is (408.3, -196.4), exactly the view actor's UE-local
+  location measured before any move. **`local = far - WorldOriginLocation`
+  (Z unchanged).** No TSW-specific offset is involved; the "far" system is
+  UE origin rebasing with double-precision bookkeeping on top.
+- `AModelActor::GetFarLocation()` and `UModelChildActorComponent::FarLocation`
+  (private, on `ARailVehicle::ModelSceneComponent`) hold the same far value
+  as `URailVehicleComponent::GetPosition()` (Z differs by 4 cm). Writing
+  `FarLocation` from Lua changes the stored value but does **not** move the
+  view actor while the vehicle is kinematic; the child view actor is only
+  re-placed by the game's own streaming/tick path.
+- `ATrackNetworkActor::WorldLocation` is (0, 0, 0) on this map, so it is
+  not the tile offset; ignore it for positioning.
+- `ATS2PrototypePlayerController` has `JumpToFarLocation(FFarVector, bool
+  bTriggerLoadingScreens, bool bDoSweepTest)`, `JumpToRailVehicle(FGuid)`
+  and `JumpToService(FName)`: the teleport API for a future "jump to
+  player" feature.
+
+**Ghost placement recipe (verified pieces):** spawn via `SpawnFormation`
+(kinematic), then each tick set the view actor transform to
+`remote_far - local_origin` with `K2_SetActorLocation` / `SetActorRotation`.
+Re-read the origin when `WorldOriginChangedDelegate` fires or on every
+`GetWorldOriginLocation` poll (cheap).
+
 ## 11. Next verification steps (need the game)
 
 1. Find the far-to-local conversion (world far origin) so remote far
