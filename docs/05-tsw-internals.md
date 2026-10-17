@@ -416,7 +416,26 @@ channel. Verified on the Training Centre:
   game's own despawn path has to be used (candidates:
   `ASandboxManager::StartRemovingTrain(URailVehicleComponent*)`,
   `ATrainSpawner::DespawnConsist`, console `ts2.dbg.RemoveTrainFromTrack`,
-  which did nothing when given an actor name). Still open.
+  which did nothing when given an actor name). `FindFirstOf("SandboxManager")`
+  is `none` in a scenario (it only exists in Sandbox/free-roam sessions),
+  so that path is not usable from a scenario either. Still open; the v1
+  fallback is to pool ghosts instead of despawning them, and to rely on
+  the level change to clear everything.
+
+## 10g. Spawning extra player pawns (2026-10-17)
+
+- `UGameplayStatics::BeginDeferredActorSpawnFromClass(ctx, TS2DefaultDriverPawn_C, transform, AlwaysSpawn)`
+  + `FinishSpawningActor` spawns a second driver pawn in a scenario without
+  a crash; it is not possessed and does not disturb the player.
+- The driver pawn has **no body**: `Mesh` (`CharacterMesh0`) has
+  `SkeletalMesh = nil` and is invisible. The game dresses characters
+  through `UCharacterFactory::GetCharacterDefinition` /
+  `ADriverPawn::FinishSetupCharacterMesh(FCharacterDefinition)` with the
+  route's `UCharacterCollection`. For guest avatars the mod must either
+  run that pipeline or borrow a loaded NPC skeletal mesh + anim class.
+- Pitfall: `FindFirstOf("DriverPawn")` returns whichever pawn comes first,
+  including ones we spawned. The player's pawn is
+  `PlayerController:K2_GetPawn()`.
 
 ## 11. Next verification steps (need the game)
 
