@@ -4,6 +4,9 @@ Wire format for the relay server and all clients (the in-game mod, the
 presence-only HTTP-API client, the fake-client simulator). JSON text frames
 over WebSocket for v0; every message is one JSON object with a `type`
 field. Numbers are JSON numbers; positions are metres unless stated.
+Snapshots can instead travel as binary deltas once both ends agree
+([Binary snapshots](#binary-snapshots-snap1)); the game-side client always
+asks for them.
 
 ## Design rules
 
@@ -29,13 +32,16 @@ field. Numbers are JSON numbers; positions are metres unless stated.
 ```json
 {"type":"hello","proto":0,"mod":"tsw-coop/0.1.0","game":{"build":886,"name":"Train Sim World 7"},
  "player":{"id":"<uuid>","name":"blu"},"room":{"route":"TrainingCentre","timetable":"freeroam"},
- "mode":"full"}
+ "mode":"full","encodings":["snap1"]}
 ```
 
 - `proto` must equal the relay's protocol version (0) or the relay answers
   `error{code:"proto"}` and closes.
 - `mode` is `full` (renders ghosts, sends snapshots) or `presence`
   (HTTP-API client, transmit-only; never receives `snapshot`).
+- `encodings` (optional) lists binary encodings the client speaks; the
+  relay echoes the ones it uses in `welcome.encodings`. Only `snap1`
+  exists ([Binary snapshots](#binary-snapshots-snap1)).
 - `room.route` is the route's content id (`URouteDefinition` name once
   known; the map package name until then). `timetable` is the timetable or
   scenario id, or `freeroam`.
@@ -72,7 +78,8 @@ field. Numbers are JSON numbers; positions are metres unless stated.
   reconstructed from `fwd`; pitch/roll follow the track locally).
 - `controls` is a whitelist of visible VirtualHID values (0–1 floats or
   ints), only keys that changed since the last snapshot plus a full set
-  every 2 s.
+  every 2 s. The relay merges them into the sender's control state; what
+  it forwards as JSON carries that whole state.
 - Vehicles missing from a snapshot keep their last known state.
 
 ### `avatar` (5–10 Hz while the player is in the world)
@@ -133,7 +140,7 @@ Short-lived things that must not be lost to snapshot throttling: `horn`,
 ```json
 {"type":"welcome","player":{"id":"<uuid>"},"room":{"route":"TrainingCentre","timetable":"freeroam"},
  "players":[{"id":"…","name":"…","mode":"full","game":{"build":886}}],
- "clock":"2026-10-17T08:07:50","host":"<player id>"}
+ "clock":"2026-10-17T08:07:50","host":"<player id>","encodings":["snap1"]}
 ```
 
 Followed immediately by the stored `consist`, last `snapshot` and last
@@ -151,6 +158,60 @@ ghosts and avatars at once; `presence` joiners get only the consists).
 
 The client message with two fields added: `from` (player id) and `t`
 (relay receive time, ms). Senders do not receive their own messages.
+Snapshots go to a `snap1` connection as binary frames instead, re-encoded
+for that connection (below); to everyone else as the JSON `snapshot` with
+the merged `controls`.
+
+## Binary snapshots (`snap1`)
+
+Negotiated per connection: the client lists `snap1` in `hello.encodings`,
+the relay answers with it in `welcome.encodings`, and from then on
+snapshots go **both ways** as binary WebSocket frames. Everything else
+stays JSON text. A client sends JSON snapshots until its `welcome` arrived.
+Binary frames on a connection that did not negotiate `snap1` are a
+non-fatal `error{code:"schema"}`; an unreadable binary frame on one that
+did is fatal (`proto`): the stream state is lost and the client reconnects.
+
+Each direction of a connection is one stream with state on both ends
+(`server/crates/tsw-coop-wire`, layout in its crate docs):
+
+- **Tables once**: a vehicle id or control name is sent the first time it
+  appears on the stream, later only its index. Snapshots of several
+  players share a relay → client stream in slots (`SOURCE` record: slot
+  plus player id).
+- **Quantised deltas against what the receiver has**: positions in cm,
+  angles in 0.01° (heading and pitch from `fwd`, yaw as an offset from the
+  heading), velocities in cm/s; only changed fields, zigzag varints.
+- **Dead reckoning**: the receiver moves every vehicle along its last
+  velocity; the sender runs the same integer prediction and sends a
+  vehicle only when the prediction is off by its tier's threshold. The
+  sender's own train (the ids of its last `consist`): 1 cm, 0.1°, 1 cm/s.
+  Everything else: 25 cm, 0.5°, 0.5 m/s, and any start or stop. Parked
+  vehicles cost nothing.
+- **Controls as state**: each value is sent once per change; the receiver
+  reports the changed ones as `controls`, as the JSON message would.
+- **Stream deflate**: raw deflate with one context per stream, sync-flushed
+  per frame, without the `00 00 FF FF` tail (as permessage-deflate).
+- **Keyframes**: a new connection starts with empty state, so the first
+  snapshot of every player on it is complete. That covers joining and
+  reconnecting; the relay replays its stored state (with the merged
+  controls) to a late joiner the same way.
+
+The relay decodes what a sender sends and encodes for every receiver
+separately; a snapshot dropped by the rate limit still updates the state
+it forwards next, so no control change is lost. Times: a binary sender
+stamps its own milliseconds (prediction time base); the relay's `t` (wall
+clock) travels along per slot, so a receiver still sees `from` and `t`.
+
+Measured on recordings (`server/crates/tsw-coop-wire/examples/measure.rs`,
+2026-10-18), relay → guest per snapshot:
+
+| Recording | JSON | `snap1` | guest error, max |
+| --- | --- | --- | --- |
+| Training Centre, 64 vehicles parked, BR 146 shunting | 9 698 B | 6 B (p95 11) | 0.8 cm |
+| Frankfurt, 64 vehicles, ~19 AI moving | 10 205 B | 63 B (p95 202) | train 0.5 cm, AI 25.3 cm |
+
+The first snapshot on a stream is a keyframe of about 2.3–2.6 KB.
 
 ### `error`
 
@@ -167,7 +228,7 @@ The client message with two fields added: `from` (player id) and `t`
 | `snapshot` rate | 30/s per player, excess dropped (not an error) |
 | `avatar` rate | 30/s per player, own budget, excess dropped (not an error) |
 | `event`/`chat` rate | 10/s per player |
-| vehicles per consist | 64 |
+| vehicles per consist or snapshot | 64 |
 | message size | 64 KiB |
 | players per room | 32 |
 | idle timeout | 30 s without any message → `left{reason:"timeout"}` |
@@ -183,5 +244,6 @@ The client message with two fields added: `from` (player id) and `t`
 ## Versioning
 
 `proto` bumps on any incompatible change. Additive fields are allowed
-within a version. Binary (CBOR or MessagePack) encoding may be negotiated
-later via a `hello.encodings` list; v0 is JSON only.
+within a version. Binary encodings are negotiated with `hello.encodings`
+(`snap1` for snapshots); a client or relay that does not list one keeps
+JSON, so old and new ends interoperate.

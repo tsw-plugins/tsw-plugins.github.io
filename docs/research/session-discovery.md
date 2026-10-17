@@ -169,6 +169,33 @@ reliable stream this is ~0.1 Mbit/s for 7 guests, so host upload stops
 mattering. Unreliable datagrams with acked baselines (Quake 3 style)
 only if head-of-line stalls show up.
 
+**Implemented (2026-10-18, `snap1`, `server/crates/tsw-coop-wire`, spec in
+docs/07 "Binary snapshots").** Two changes against the decision:
+
+- **Deflate instead of zstd.** Measured on the same recordings
+  (`analyze.py`, rows `5c`/`6c`/`7c` in `results.txt`): raw deflate over the
+  stream, sync-flushed and without the 4-byte tail, is smaller than zstd-3
+  on these tiny messages (parked 10 vs 16 B, moving AI with dead reckoning
+  60 vs 67 B); zstd's per-block framing costs more than its better
+  matching wins. Deflate is also pure Rust (`flate2`/`miniz_oxide`), where
+  zstd would mean cross-compiling C into the game DLL.
+- **Dead reckoning for the train too**, with tight thresholds (1 cm, 0.1°,
+  1 cm/s against the prediction) instead of "every tick": a train cruising
+  at constant speed costs almost nothing, and the error stays at the
+  quantum.
+
+The relay decodes each sender's stream and re-encodes per receiver, so
+"against what each guest was last sent" holds also for late joiners and
+for snapshots the rate limit drops. Through the real code, host → relay →
+guest (`cargo run --release -p tsw-coop-wire --example measure -- REC...`):
+
+| Recording | JSON | `snap1` | 7 guests | guest error, max |
+| --- | --- | --- | --- | --- |
+| Training Centre, parked + shunting BR 146 | 9 698 B | 6 B | 0.003 Mbit/s | 0.8 cm |
+| Frankfurt, ~19 AI moving | 10 205 B | 63 B | 0.03 Mbit/s | train 0.5 cm, AI 25.3 cm |
+
+Keyframe (first snapshot on a stream): 2.3–2.6 KB.
+
 Measure again after each step with the recorded host streams (`tsw-coop-emu`
 replays and the relay's traffic counters): bytes per snapshot and per
 second per guest, for a parked train, a running train with AI around, and
