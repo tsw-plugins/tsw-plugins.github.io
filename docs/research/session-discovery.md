@@ -138,7 +138,38 @@ The usual toolbox for snapshot replication, in the order it pays off:
    recorded snapshots) or per stream; on top of deltas it mostly removes
    the remaining repetition.
 
-Measure before and after with the recorded host streams (`tsw-coop-emu`
+**Measured** (2026-10-17, `dumps/tsw7-886/experiments/compress-1/`:
+`analyze.py`, `results.txt`; recordings: Training Centre with a parked
+BR 146, 64 vehicles; Frankfurt with ~19 moving AI vehicles per snapshot,
+125 different vehicles over 150 s):
+
+| Encoding | parked, B/snapshot | moving AI, B/snapshot | moving AI, 7 guests |
+| --- | --- | --- | --- |
+| JSON today | 10 740 | 10 205 | 4.9 Mbit/s |
+| JSON + zstd per message | 2 802 | 3 704 | 1.8 Mbit/s |
+| binary, full snapshot | 1 618 | 1 609 | 0.76 Mbit/s |
+| binary deltas (reliable stream) | 21 | 190 | 0.09 Mbit/s |
+| + zstd over the stream | 16 | 123 | 0.06 Mbit/s |
+| + rate tiers (AI at 2 Hz) | 16 | 47 | 0.02 Mbit/s |
+
+AI traffic is 96–98 % of today's bytes; the 35-character vehicle id alone
+is 28 % of each vehicle entry. A full binary vehicle record is 25 bytes,
+a delta record of a moving vehicle 10–14 bytes. AI at 2 Hz is off by up to
+38 cm (p95) when extrapolated, 6.6 m at worst when braking; a 25 cm
+dead-reckoning check fixes that for ~50 % more bytes. Missing in the data:
+the player's train driving at speed (adds a few kbit/s).
+
+**Decided (delegated, 2026-10-17):** vehicle and control-name tables once
+(on join and change, indices in snapshots); the binary format above with
+1 cm / 0.1° / 1 cm/s thresholds against what each guest was last sent;
+the player's train every tick, other moving vehicles by dead reckoning
+(25 cm), stationary ones only when they start; zstd level 3 over the
+stream, flushed per message; a full keyframe on join and reconnect. On a
+reliable stream this is ~0.1 Mbit/s for 7 guests, so host upload stops
+mattering. Unreliable datagrams with acked baselines (Quake 3 style)
+only if head-of-line stalls show up.
+
+Measure again after each step with the recorded host streams (`tsw-coop-emu`
 replays and the relay's traffic counters): bytes per snapshot and per
 second per guest, for a parked train, a running train with AI around, and
 a busy station.
@@ -163,14 +194,45 @@ at once, first answer wins (as OpenOMSI does):
    (it also offers dial-by-key with public relays run by n0, an optional
    third-party fallback the host can switch on).
 
+### Transport (decided, delegated, 2026-10-17)
+
+- **v1: keep WebSocket over TCP**, now to the host's in-process server,
+  plus the `portmapper` crate (UPnP-IGD/PCP/NAT-PMP; needs a Proton test of
+  SSDP multicast). Global IPv6 goes first in the invite: German DS-Lite and
+  cable lines usually have it, and a Fritz!Box IPv6 opening or PCP makes
+  the host reachable without NAT.
+- **Next: iroh 1.x as the target transport**, after a spike. It is the only
+  Rust QUIC stack tested under Wine/Proton (iroh#3901 fixed by #3902 with
+  Wine CI; its UDP layer `noq-udp` detects Wine and drops the socket
+  options Wine lacks; upstream quinn still fails under Wine, quinn#2587).
+  Used with `Builder::empty()` (no n0 discovery, no relay), a persisted
+  host key, port mapping on, our own ALPN; unreliable datagrams for
+  snapshots, a stream for events. Needs a dedicated tokio runtime thread
+  (not started from `DllMain`) and adds several MB to the DLL. Spike
+  checks: build with our MSVC cross toolchain (`ring`), run under Proton,
+  size.
+- **No hole punching in v1.** iroh punches only over an already working
+  path, normally a relay; without one, two NATed peers cannot meet. The
+  NAS cannot be that relay (needs UDP and TCP 443 forwarded, Cloudflare
+  Tunnel and Funnel carry no UDP, uplink 15 Mbit/s).
+- **n0's public relays: host opt-in, off by default**, labelled "best
+  effort, no guarantee": n0 offers them free but "for development and
+  hobby use only", with unpublished rate limits and no SLA. When on, the
+  relay URL goes into the invite and enables punching and a relayed
+  fallback.
+
 ### Invite: self-contained, works with no server
 
 - **Full invite** (copy and paste, a chat link): `tswcoop://join/<invite>`
   where `<invite>` is base32 (Crockford, checksum) of: format version,
   session secret (128 bit random, also the join credential), the host's
-  TLS key fingerprint (so a guest cannot be redirected to an impostor),
-  and the candidate addresses (public mapped address, LAN, overlay; IPv4
-  and IPv6). Roughly 60–90 characters: fine to paste, not to type.
+  key (32 bytes; with iroh this is its endpoint id, which also
+  authenticates the host, so a guest cannot be redirected to an impostor),
+  the candidate addresses (global IPv6, mapped public IPv4:port, LAN,
+  overlay) and, only if the host opted in, a relay URL. About 100–150
+  characters (~200 with a relay): fine to paste, not to type.
+- While the master is up it also maps the host key to current addresses,
+  so an invite with stale addresses keeps working.
 - **Short code** (`K7Q-4ZM`, typeable): issued by the master for a session
   that registered there (public or not); resolves to the full invite. Only
   works while the master is up; the full invite always works.
@@ -241,9 +303,8 @@ the invite preview ("3/8 players, password") query hosts directly.
 
 - ~~Pages address~~: a `tsw-coop` GitHub organisation (`tsw-coop.github.io`),
   set up by the maintainer when the site is built (decided 2026-10-17).
-- Hole punching: worth building at all, given overlays and port mapping
-  cover most homes and it needs the master as rendezvous? And may the host
-  opt into n0's public iroh relays as a fallback?
+- ~~Hole punching, n0 relays~~: decided above (not in v1; n0 relays as
+  host opt-in, off by default).
 - ~~Short codes for private sessions?~~ Decided 2026-10-17 (delegated):
   yes, but only on request. A private session's host may press "get a
   short code"; the master then stores just the invite and an expiry (no
