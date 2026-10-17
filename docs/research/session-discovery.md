@@ -103,9 +103,45 @@ but nothing depends on one.
 
 Host upload is the cost. Today a host snapshot is about 18 KB (mostly the
 AI traffic around it), so 10 Hz to 7 guests is ~10 Mbit/s, too much for
-many DSL lines. Before direct play ships: send only what changed, quantise
-positions, compress (zstd), lower the rate for far-away AI. Target ≤ 2 KB
-per snapshot on average, i.e. ≤ ~1.5 Mbit/s for 7 guests.
+many DSL lines. Before direct play ships the traffic has to shrink (next
+section); target ≤ 2 KB per snapshot on average, i.e. ≤ ~1.5 Mbit/s for
+7 guests, and far less for a parked train.
+
+### Keeping the traffic small (requirement, maintainer 2026-10-17)
+
+"Minimise it as much as possible, only send what changed, best practice."
+The usual toolbox for snapshot replication, in the order it pays off:
+
+1. **Delta against an acknowledged baseline** (Quake 3 / Source model):
+   each guest acks the last snapshot it received; the host sends only the
+   fields that differ from that baseline, per entity. Lost packets cost
+   nothing extra (the next delta is against the last *acked* state), and
+   an entity that did not move costs zero bytes.
+2. **Change thresholds**: a value only counts as changed beyond a small
+   epsilon (position 1 cm, heading 0.1°, lever 0.005), so jitter is not
+   sent.
+3. **Quantisation and compact encoding**: positions as integer
+   centimetres relative to a per-snapshot origin, headings as 16-bit
+   angles, velocities as 16-bit, binary encoding instead of JSON for the
+   game traffic (JSON stays for events and the query).
+4. **Static data once**: vehicle classes, liveries, consists, names only
+   when they change (the consist message already works that way).
+5. **Interest management and rate tiers**: the host's own train and
+   vehicles near any player at full rate (10 Hz); AI traffic far from
+   every player at 1–2 Hz or only on start/stop; parked vehicles once.
+   Each guest gets what is relevant around it.
+6. **Prediction instead of sending**: guests extrapolate along the track
+   with the last speed (already done for ghosts); the host sends a
+   correction only when the guest's extrapolation would be off by more
+   than the threshold (dead reckoning).
+7. **Compression last**: zstd per message (with a dictionary trained on
+   recorded snapshots) or per stream; on top of deltas it mostly removes
+   the remaining repetition.
+
+Measure before and after with the recorded host streams (`tsw-coop-emu`
+replays and the relay's traffic counters): bytes per snapshot and per
+second per guest, for a parked train, a running train with AI around, and
+a busy station.
 
 ### Reaching the host
 
