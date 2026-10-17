@@ -502,6 +502,55 @@ unloads; Ctrl+R pauses briefly because of it.
 - Ctrl+R sent through the GUI tool is unreliable (2 of 3 attempts did
   nothing); check for `All mods re-installed` in UE4SS.log after each one.
 
+## 10l. Cold and dark to moving, in code (2026-10-17, Training Centre "Wagen für Wagen")
+
+Tooling: `mod-lua/TswCoopDebug/Scripts/drive.lua`, driven by `tswcmd drive …`
+(`drive go [filter] [power]` boards, starts up and applies power in one go).
+
+**Built-in presets are not usable on live trains.** `USimulationComponent::ResetSimulation`
+with `RunningActivePreset` is the spawn-time preset. Applied to an existing train it crashed the
+game a few frames later, and again as soon as a player boarded a train it had been applied to
+(minidumps in `dumps/tsw7-886/experiments/cpp-telemetry-7/crash-resetsimulation/`).
+Each BR 146 carries a `Preset` property: the scenario's own loco reads 2 (running),
+the parked ones 0.
+
+**Controls must fire events.** The vehicle blueprints react to `VirtualHIDChanged`, not to values.
+- `SetCurrentInputValue` moves the lever and nothing else: a "set" battery stays off, a "set"
+  train brake does not brake. (The Class 323 tolerates sets; the BR 146 does not.)
+- `BeginIncreaseDigital(pc)` / `BeginDecreaseDigital(pc)` … `EndChanging(pc)` is a held key and
+  fires the events. `drive move <ctl> <v>` holds until the value is reached; `drive hold` holds for
+  a time; push buttons are pressed with a short hold.
+- Blueprint functions can be called directly: `drive call <fn> [arg]`.
+
+**BR 146 (RVM_TTC_BR146_C) startup, as encoded in the recipe:**
+1. `SetBatteryState(true)` on the loco. Pressing `BatteryControl_F` from code did not wake a cold
+   loco; the blueprint function did (cab screens on, `bBatteryActive`).
+2. Press `ReverserHandle_F` (toggle, 1 = key in), `move Reverser_F 1` (0 reverse, 0.33 off, 1 forward).
+3. Throttle to 0 and `DynamicBrake_F` to its minimum. A non-zero dynamic brake holds the traction
+   lock with condition `DynamicBrakeActive`; closing the breaker with the throttle open makes the
+   cab announce "Störung".
+4. Wait until `CanPantographRise()` (auxiliary air; 23 s on a cold loco), then hold
+   `Pantograph_F` up, retrying until a `CurrentCollectorComponent` reports `bDeployed`.
+   `PantographSelector` 0.667 raises the rear pantograph, so check both collectors.
+5. Hold `MainCircuitBreaker_F` up. `CurrentCollector_F.bCircuitBreakerOpen` goes false and the main
+   transformer sees 15 kV.
+6. Release the parking brake, `move TrainBrake_F 0.1` (running position), then throttle.
+
+Result: on the scenario's loco (preset 2) traction reached 119 kN and 11.9 m/s, braked to 0 with a
+held `TrainBrake_F`. On a parked loco (preset 0) everything came up (92 kN at the wheels) but it only
+crept at 0.04 m/s in either direction: the spring parking brake cylinder read 0 bar (applied) and
+the `ParkingBrake_Release_F` press returned false. **Open:** how to release the parking brake of a
+preset-0 loco. The game exited, with no crash report, during that test.
+
+**Diagnostics.** `drive state` prints speed, the recipe's levers, battery, pantograph, breaker and
+every lock manager with its named `LockConditions` (`TrainBrakeActive`, `DynamicBrakeActive`,
+`EmergencyActive`, …). That readout found each blocker above. The scenario's current objective is
+on the HUD: `drive objective` reads `HUDObjectiveWidget` Name/Description. The full task list sits in
+`InGameScheduleLog` ScheduleRow text blocks (row ids count down from the first task).
+
+**Scenario gating.** Tutorial scenarios advance one objective at a time
+(e.g. headlights, then head signals); clearing the traction lock does not skip them.
+
 ## 11. Next verification steps (need the game)
 
 1. Find the far-to-local conversion (world far origin) so remote far
