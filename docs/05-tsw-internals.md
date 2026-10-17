@@ -1,0 +1,247 @@
+# 05 — TSW internals (from the TSW 7 build 886 dump)
+
+Everything here was read from `dumps/tsw7-886/` (UHT headers of the
+`TS2Prototype` module plus the in-route object dump taken on the Training
+Centre map). Names are exact and verified on TSW 7 build 886. Behaviour
+described as "presumably" has not been exercised yet.
+
+## Summary of answers to the open questions in 04-roadmap
+
+| Question | Answer |
+| --- | --- |
+| Track-relative position accessor? | Yes. The track network is a graph of `UNetworkRibbon` objects addressed by `FGuid`; positions are `FNetworkRibbonLocation { FGuid RibbonReference; float RibbonLocation; }`. The game's own spawner takes exactly this. The vehicle's live ribbon position is not exposed as a reflected getter, but `URailVehicleComponent::GetPosition()` returns a double-precision `FFarVector` that is independent of the UE world origin. |
+| World origin / tile scheme? | Both. TSW keeps a double-precision "far" coordinate system (`FFarVector`, `FFarMatrix`) on top of UE's origin rebasing (`UWorld::SetWorldOriginLocation`). `URailVehicleComponent` exposes a `WorldOriginChangedDelegate(FVector WorldOffset)`. `CurrentTile` in the HTTP API is `FIntPoint` from `FTS2PlayerInfo`. Send far coordinates or ribbon locations, never raw `AActor` transforms. |
+| Spawning `RVM_*` outside the game's spawner? | Not needed. `UTimetableRuntimeExtensionLibrary::SpawnFormation(World, UTrainEntryDefinition*, FNetworkRibbonLocation, EDirectionOfTravel)` is a static, Blueprint-callable spawner that builds a full consist at a ribbon location. `ATrainSpawner` is a placeable actor that does the same. Simulation can then be switched off per vehicle (`ESimPhysicsMode::Kinematic`/`Disabled`). |
+| Dispatcher track occupancy? | `ATrackNetworkManager::TrackSectionsMap : TMap<FGuid, FTrackNetworkSection>`, each section carrying `OccupationRailVehicleIds : TArray<FGuid>` (the `URailVehicleComponent::RailVehicleID`). `ADispatcher` consumes sections via `AcquiredSectionsMap` and `TrackCircuitTimers`. Occupancy is a plain array of GUIDs; a ghost can be made "real" to the signalling by appending its vehicle IDs to the right sections. |
+| Asset availability / DLC detection? | `UDLCManagementFunctionLibrary::IsAssetPathLoadable(World, Path)`, `CachedContentContainsDLC`, `IsDLCOwned(ID)`, and `UTrainEntryDefinition::RequiredDLCPlugins : TArray<FName>`. |
+
+## 1. Actor model: model actor + view actor
+
+TSW separates simulation from rendering per vehicle:
+
+- `ARailVehicle : AModelActor` — the simulated vehicle. Holds
+  `URailVehicleComponent* RailVehiclePhysicsComponent`, the
+  `URailVehicleDefinition` it was created from (`CreatedFromPtr`,
+  `ReskinID`, `UDTGReskin* Reskin`), cab layouts, and
+  `FindVirtualHIDComponent(FName)`.
+- `ARailVehicleView : AViewActor` — the visual twin. `AViewActor` keeps a
+  weak `ModelActor` pointer; `AModelActor::GetViewActor()` /
+  `GetModelActor()` link the two. `URailVehicleDefinition` names both
+  classes: `ModelActorAsset : TSoftClassPtr<ARailVehicle>` and
+  `ViewActorAsset : TSoftClassPtr<ARailVehicleView>`, plus
+  `AdditionalViewActorAssets` and the end-of-train device pair.
+- `AModelActor::GetFarMatrix()` / `GetFarLocation()` give the far-space
+  transform (`FFarMatrix { FVector XAxis, YAxis, ZAxis; FFarVector Origin; }`,
+  `FFarVector { double X, Y; float Z; }`).
+
+Consequence for ghosts: strategy A in 03-architecture ("mesh ghost") maps
+directly onto spawning only the **view actor class** from the remote
+vehicle's definition and driving its transform. Strategy B ("real vehicle,
+simulation disabled") maps onto spawning the model actor via
+`SpawnFormation` and setting its physics mode to kinematic.
+
+In the Training Centre dump there was 1 live `RailVehicle`, 121
+`RailVehicleComponent` and 116 `SimulationComponent` instances (the
+`RVM_*` blueprints are subclasses, so the class-name count undercounts).
+
+## 2. Simulation (SimuGraph)
+
+- `USimulationComponent : UActorComponent` owns the graph:
+  `USimulationAsset* SimulationGraph` (the asset) and
+  `USimulationRuntime* SimulationGraphInstance` (the running instance),
+  `ESimPhysicsIntegationMethod IntegratorMethod`, `bEnableParallelism`,
+  `ResetSimulation(ESimulationPreset, FName ConfigName)`.
+- `URailVehicleComponent` is the vehicle-level physics owner:
+  `FSimulationNode_RailVehicle Node` (dimensions, mass, buffers, couplers,
+  `bDerailed`, pivot tree), `FRailVehicleSimplePhysics SimplePhysics`,
+  `ERailVehicleSimPhysicsEnabledState SimPhysicsEnabledState
+  { Disabled, Kinematic, DynamicDirect, DynamicIndirect }` and
+  `ESimPhysicsMode CurrentPhysicsMode { Dynamic, Static, Kinematic, Disabled }`
+  (both private, but reachable through UE4SS property access).
+- `ESimulationPreset { ParkedPreset, RunningStoppedPreset, RunningActivePreset }`
+  with `ApplySimulationPreset(Preset, ConfigName)` and
+  `ResetPhysics(Preset, ConfigName)`.
+- Useful reflected getters on `URailVehicleComponent`: `GetPosition()`
+  (`FFarVector`), `GetWorldTransform()` (`FFarMatrix`), `GetVelocity()`,
+  `GetForwardsVelocity()`, `GetForwardVector()`, `GetAngularVelocity()`,
+  `GetLength()`, `GetFormationLength()`,
+  `GetFormation(EActorConnectionIterationMode) : TArray<AActor*>`,
+  `GetNextRailVehicle(ESide, ESide& ConnectedSide)`, `GetBogieRotation(int)`,
+  `GetAxleCount()`, `IsDerailed()`, `DistanceTravelled`.
+- Direct overrides that exist for the game's own tooling and look tailor
+  made for ghost placement: `SetOverrideLocation(const FVector&)`,
+  `SetOverrideSpeed(float)` on the component, and
+  `ARailVehicle::SetOverrideLocation(const FVector&)`. Whether they work
+  while the vehicle is kinematic is the first thing to test in M5.
+- Bogies are `FSimulationNode_Bogie` nodes inside the graph; there is no
+  separate bogie actor.
+
+## 3. Track network and positions
+
+- `ATrackNetworkActor` (8 instances on the Training Centre map, one per
+  streamed tile presumably) holds `Ribbons : TArray<UNetworkRibbon*>`,
+  `Nodes`, `Junctions`, a `FIntVector WorldLocation`, and lookups
+  `FindRibbon(FGuid)`, `FindNode(FGuid)`, `FindJunction(FGuid)`.
+- `UNetworkRibbon` (485 instances): `RibbonGuid`, `StartNodeGuid`,
+  `EndNodeGuid`, `Curve`, `VerticalCurve`, `FIntVector WorldLocation`,
+  `FRibbonTrackSections TrackSections` (which signalling sections the
+  ribbon crosses), `TrackRule`, gauge, super-elevation, `bIsDynamic`.
+- Position types, all GUID-based and therefore stable across tile
+  streaming and origin rebasing:
+  - `FNetworkRibbonLocation { FGuid RibbonReference; float RibbonLocation; }`
+  - `FNetworkRibbonRange { FGuid RibbonReference; float RibbonStart, RibbonEnd; }`
+  - `FTrackNetworkFollower { UNetworkRibbon* Ribbon; float RibbonLocation; EDirectionOfTravel Direction; }`
+  - `FNetworkPathServiceFollower { ESide FormationSide; double DistanceOnPath; … }` for timetable services.
+- Geo helpers (static, on `UTS2DebugFunctionLibrary`, not the gameplay
+  library as 02-prior-art assumed): `GetActorLatLong(Actor, Lat, Long, ok)`,
+  `GetActorLatLongString`, `LatLongToFarVector(Lat, Lon, Alt, WorldActor, OutPos)`.
+  `UTS2GameplayFunctionLibrary` has `GetWorldLocation(World, Lat, Long)` /
+  `SetWorldLocation` (route anchor) and `GetDistanceFromGeoLocation`.
+
+**Recommended snapshot position encoding** (replaces the open choice in
+03-architecture): per vehicle send the far-space transform from
+`GetWorldTransform()` (double X/Y, float Z, three axes) plus the
+`FNetworkRibbonLocation` once a reflected way to read the live ribbon
+follower is found (the follower lives inside the simulation runtime; the
+HTTP API's `DriverAid.Data` proves the game computes it). Far space is
+already origin-independent, so tile and origin rebasing are a non-issue
+for transport; they only matter when converting to a local `FVector` on
+the receiving side (`LatLongToFarVector` shows the conversion exists).
+
+## 4. Spawning consists
+
+- `UTimetableRuntimeExtensionLibrary` (Blueprint function library):
+  - `static void SpawnFormation(UObject* World, UTrainEntryDefinition* TrainEntry, const FNetworkRibbonLocation& RibbonLoc, EDirectionOfTravel LocalSpawnDir)`
+  - `static TArray<UTrainEntryDefinition*> FindSpawnableFormations(const TArray<FString>& Search)`
+  - `static bool FindTrainSpawnLocationNearDriverPawn(ADriverPawn*, float DistanceCM, FNetworkRibbonLocation& Out, EDirectionOfTravel& OutDir)`
+  - `bool FindTrainSpawnLocationNearLocation(FVector, FNetworkRibbonLocation& Out)`
+  This is the sandbox/free-roam spawner and is callable from Lua via
+  `StaticFindObject` on the default object.
+- `ATrainSpawner : AActor` (placeable): `TrainDefinition`,
+  `bAutoPossess`, `bSpawnOnBeginPlay`, `bApplyPreset`, `PresetConfig`,
+  coupling spring parameters, `SpawnConsist()`, `DespawnConsist()`.
+- Definitions: `UTrainEntryDefinition : UDataAsset` (abstract;
+  `RequiredDLCPlugins`, `bIsDrivable`, `GetRailVehicleBP(int)`,
+  `GetApproximateLength()`), `URailVehicleDefinition` (single vehicle:
+  model/view classes, `RailVehicleClass`, `LiveryID`, `MaximumSpeed`,
+  `VehicleCategory`, electrification, `ApproximateLength`),
+  `UTrainFormation` (`Formation : TArray<FTrainFormationEntry>`, each entry
+  a `TrainEntry` plus `bFlipped`, substitution rules, cargo preload) and
+  `UUGCFormation` for user formations.
+- Spawn lifecycle hooks on `URailVehicleComponent`:
+  `PostTimetableFormationSpawned`, `ApplyPresetConfiguration`,
+  `OnFormationChanged`, `PerformServiceSetupTask`, `OnCouple/OnUncouple`.
+  `ARailVehicle::OnSpawn()` is the per-actor entry.
+
+So the ghost pipeline for strategy B is: look up the remote vehicle's
+`URailVehicleDefinition` by class path, check `IsAssetPathLoadable`, build
+or find a `UTrainFormation`, call `SpawnFormation` at the remote ribbon
+location, then set `SimPhysicsEnabledState = Kinematic` and keep the
+vehicle out of any timetable service.
+
+## 5. Timetable, services and AI driving (for strategy C and L4)
+
+- `ARouteTimetable` (2 instances) owns services as `FRouteTimetableService`
+  structs: `Name`, `ServiceClass`, `CurrentPath : FNetworkPath`,
+  `PathFollower`, `DriverPermissions : EServiceDriverPermission { Player, AI, Both }`,
+  `CurrentState : ERouteTimetableServiceState { NotStarted, Running, Complete, Cancelled }`,
+  `AIDriver : TLazyObjectPtr<ATS2AIController>`, `bSpawnWithEngineer`,
+  `bSandboxCreatedService`, section acquisition counters.
+- Lookups: `FindServiceNameForRailVehicleActor(AActor*)`,
+  `FindServiceNameForRailVehicleID(FGuid)`, `IsRailVehicleActorInService`,
+  `GetServiceRunningState`, `SetServiceDriverPermission(FName, EServiceDriverPermission)`.
+- `ATS2AIController` is the AI driver. Reflected controls are coarse:
+  `SetMovementLocked(bool)`, `SetBlockDoorLock/Unlock`, `OnInstructionArrived`.
+  There is no reflected "set target speed"; the AI follows the service path
+  and signalling. Strategy C (drive a native AI consist to a remote
+  position) would have to fight this through `SetOverrideSpeed` or by
+  hooking the AI tick, which confirms the roadmap's "research only" rating.
+- Shared-AI option 2 from 03-architecture (host streams its AI as ghosts)
+  needs only `FindServiceNameForRailVehicleActor` to tag each host consist
+  with its service name, so clients can suppress their local copy of the
+  same service via `SetServiceDriverPermission` or by not spawning it.
+
+## 6. Signalling and track occupancy (for L4)
+
+- `ATrackNetworkManager : AInfo` (2 instances): `TrackSections : TMap<int32, FTrackNetworkSection>`
+  and `TrackSectionsMap : TMap<FGuid, FTrackNetworkSection>`.
+- `FTrackNetworkSection { FGuid TrackSectionID; TArray<FTrackNetworkSectionElement> SectionElements; TArray<FSignalPropertyReference> ReferencingSignals; TArray<FGuid> OccupationRailVehicleIds; bool bWithinYard; }`.
+  Each element has `PrevTrackSectionID`, `NextTrackSectionID`, start/end
+  signal references and a `FNetworkMultiRibbonRange` (list of
+  `FNetworkRibbonRange`) describing which ribbon spans it covers.
+- `ADispatcher : AInfo` (1 instance) holds `AcquiredRoutes`,
+  `AcquiredOverlaps`, `AcquiredSectionsMap : TMap<FGuid, FDispatcherAcquiredSection>`,
+  `EntryRequests`, `TrackCircuitTimers`, `ApproachReleaseTimers`, level
+  crossings, and exposes `RequestEnterDispatchedNetwork(FName Service)`,
+  `RequestPassSignalAtDanger`, `TrainTriggerLevelCrossing`,
+  `BlockLevelCrossing`.
+- `ESignalRouteOccupancy { Clear, ClearCallOn, Occupied }` is what signals
+  derive from section occupancy. Save games persist
+  `FSaveGameOccupiedTrackSection { TrackSectionID, OccupiedByRVs }`, which
+  confirms the occupancy model is "set of vehicle GUIDs per section" and
+  nothing more.
+
+**Feasibility verdict for M7:** a dispatcher hook looks feasible without
+strategy C. A ghost needs a `RailVehicleID` GUID, and the mod must add that
+GUID to `OccupationRailVehicleIds` of every section whose ribbon ranges the
+ghost's vehicles overlap, and remove it when it leaves. Two things are
+unknown and need a live test: whether the game recomputes occupancy from
+physics every tick (overwriting the array) and whether signals read the
+array directly or through a non-reflected cache. Mapping a ribbon
+location to sections is pure data: `UNetworkRibbon::TrackSections`
+(`InitialTrackSectionID` plus `Splits`) gives the sections along a ribbon.
+
+## 7. Player, driver pawn, HTTP API
+
+- `ADriverPawn::GetDrivableActor()`, `GetAttachedSeatComponent()`,
+  `SetControlledDrivable(AActor*, FName Interior, int CameraIndex, …)`,
+  `SetControlledDrivableFromSeat`. The player never possesses the
+  `ARailVehicle`; the pawn is attached to a seat. Ghost rule "never let a
+  ghost become the drivable actor" is enforced by never calling
+  `SetControlledDrivable` with a ghost and by excluding ghosts from
+  `GetSortedRelevantVehicleCameras`.
+- `FTS2PlayerInfo { FGeoCoordinates GeoLocation (double); FIntPoint CurrentTile; FString PlayerProfileName; FString CameraMode; FName CurrentServiceName; }`
+  is exactly the HTTP API `DriverAid.PlayerInfo` payload.
+- The HTTP API is implemented through `ICommNodeSpecialization`, an empty
+  interface that `ARailVehicle`, `URailVehicleComponent` and
+  `USimulationComponent` implement; node registration is native and not
+  reflected. Nothing to hook there.
+- Geo coordinates are doubles internally (`FGeoCoordinates`), while the
+  debug-library accessors truncate to float. Prefer far vectors over
+  lat/lon for anything positional.
+
+## 8. DLC and content loading
+
+`UDLCManagementFunctionLibrary` (all static):
+`IsAssetPathLoadable(World, Path)`, `CachedContentContainsDLC(World, Name)`,
+`GetCachedContentForDLC`, `GetStorePackageIndex`, `HasPendingDLC`,
+`RequestContentLoadSynchronous(World, SoftObject, Category, State, ReleaseRule)`,
+`RequestContentFromPackageList(World, TSet<FString> Packages, …)`,
+`RequestContentLoadForUGCFormationSynchronous`, and `UDLCManagementSystem`
+with `IsDLCOwned(FString ID)`, `IsEntitled`. TSW streams content per route
+and releases it (`RequestContentRelease`), so a ghost of a loco from
+another DLC needs `RequestContentLoadSynchronous` on its definition before
+`SpawnFormation`, and `RequiredDLCPlugins` on the definition tells which
+plugin must be installed.
+
+## 9. Corrections to earlier docs
+
+- `GetActorLatLong` lives on `UTS2DebugFunctionLibrary`, not
+  `UTS2GameplayFunctionLibrary` (02-prior-art, 03-architecture).
+- The engine is confirmed `++UE4+Release-4.26` on TSW 7; the module name
+  `TS2Prototype` and the `RVM_*_C` naming hold.
+- The HTTP API's `GameBuildNumber` is 886 for Steam buildid 25890949.
+
+## 10. Next verification steps (need the game)
+
+1. Lua experiment: call `UTimetableRuntimeExtensionLibrary::SpawnFormation`
+   near the driver pawn with a `UTrainFormation` found by
+   `FindSpawnableFormations`, then read `SimPhysicsEnabledState` and try
+   `Kinematic` + `SetOverrideLocation`. This decides A vs B in one session.
+2. Read `URailVehicleComponent::GetWorldTransform()` for the player's
+   vehicle at 10 Hz and compare with `DriverAid.PlayerInfo.geoLocation`.
+3. Dump a real route (not the Training Centre) to see how many
+   `ATrackNetworkActor` tiles exist and whether `TrackSectionsMap` is
+   populated outside yards.
+4. Poke `OccupationRailVehicleIds` for one section from Lua and watch the
+   protecting signal.
