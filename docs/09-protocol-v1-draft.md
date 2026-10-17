@@ -77,7 +77,7 @@ else from a guest is `error{code:"auth"}` and not forwarded.
 
 | Message | Dir | Fields | Notes |
 | --- | --- | --- | --- |
-| `pawn` | H/G→all | `far[3]`, `yaw`, `anim`, `seat` (`{vehicle, seat}` or null) | Walking passengers, 5–10 Hz. Spectators receive, never send. |
+| `pawn` | H/G→all | `far[3]`, `yaw`, `anim`, `seat` (`{vehicle, seat}` or null) | Walking passengers, 5–10 Hz. Spectators receive, never send. **Partly shipped in v0 as `avatar`** (07, 2026-10-17: `far`, `yaw`, `state` as `anim`, `vehicle`, optional `vel`; no seat slot yet, broadcast, presence clients excluded). v1 adds the seat slot, spectator delivery and sender permissions. |
 | `seat_request` | G→H | `vehicle`, `seat` (`driver`) | Directed to the host. |
 | `seat_grant` | H→all | `to`, `vehicle`, `seat` | Broadcast so everyone renders the driver. First come wins (08). |
 | `seat_deny` | H→G | `to`, `reason` (`taken` \| `not_allowed`) | |

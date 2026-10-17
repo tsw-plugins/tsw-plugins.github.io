@@ -8,7 +8,8 @@ field. Numbers are JSON numbers; positions are metres unless stated.
 ## Design rules
 
 - The relay never simulates. It validates, rate-limits, stores the latest
-  `consist` and `snapshot` per player for late joiners, and fans out.
+  `consist`, `snapshot` and `avatar` per player for late joiners, and fans
+  out.
 - One WebSocket connection = one player. Rooms are keyed by
   `(route, timetable)`; a player is in at most one room.
 - Positions are **far-space** coordinates as the game reports them
@@ -74,6 +75,40 @@ field. Numbers are JSON numbers; positions are metres unless stated.
   every 2 s.
 - Vehicles missing from a snapshot keep their last known state.
 
+### `avatar` (5–10 Hz while the player is in the world)
+
+The player's own body: the walking passenger pawn of 08 ("Guest body").
+Added 2026-10-17 as an additive v0 message (old relays reject it with
+`error{code:"schema"}`, nothing else changes).
+
+```json
+{"type":"avatar","seq":916,"far":[100105.4,-15241.7,8771.2],"yaw":90.0,"state":"walk",
+ "vel":[0.0,140.0,0.0]}
+{"type":"avatar","seq":917,"far":[…],"yaw":270.0,"state":"seated","vehicle":"8F2C…"}
+```
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `seq` | int | Monotonic per client, shared with the other messages. |
+| `far` | `[f64;3]` | Pawn root in far space, centimetres, UE axes (the convention of `snapshot.vehicles[].far`). |
+| `yaw` | float | Facing in degrees, `[0, 360)`, 0 = +X, 90 = +Y. |
+| `state` | string | `idle`, `walk`, `run`, `jump` (in the air) or `seated`. Optional, default `idle`. |
+| `vehicle` | string | Optional. `RailVehicleID` the player sits or rides in. |
+| `vel` | `[f64;3]` | Optional. cm/s, for extrapolation between updates. |
+
+- Send at 5–10 Hz while moving; a standing player may drop to 1 Hz.
+- Relay checks: every `far` component finite and within ±1e9 cm, `yaw` and
+  `vel` finite, `vehicle` 1–128 characters, `state` one of the five; any
+  failure is a non-fatal `error{code:"schema"}` and the message is dropped.
+- Rate: 30/s per player, its own budget (not shared with `snapshot` or
+  `event`/`chat`); excess is dropped silently like snapshots.
+- Stored per player and replayed to late joiners after their `welcome`,
+  together with `consist` and `snapshot`. Like `snapshot`, it is never
+  delivered to `presence` clients.
+- Receivers validate motion (08 anticheat): the emulator flags an avatar on
+  foot moving faster than 12 m/s, or a seated/riding one faster than
+  150 m/s, as a teleport.
+
 ### `event`
 
 ```json
@@ -101,8 +136,9 @@ Short-lived things that must not be lost to snapshot throttling: `horn`,
  "clock":"2026-10-17T08:07:50","host":"<player id>"}
 ```
 
-Followed immediately by the stored `consist` and last `snapshot` of every
-other player in the room (so a late joiner can spawn ghosts at once).
+Followed immediately by the stored `consist`, last `snapshot` and last
+`avatar` of every other player in the room (so a late joiner can spawn
+ghosts and avatars at once; `presence` joiners get only the consists).
 
 ### `joined` / `left`
 
@@ -111,7 +147,7 @@ other player in the room (so a late joiner can spawn ghosts at once).
 {"type":"left","player":{"id":"…"},"reason":"closed|timeout|kicked"}
 ```
 
-### Fan-out of `consist`, `snapshot`, `event`, `chat`
+### Fan-out of `consist`, `snapshot`, `avatar`, `event`, `chat`
 
 The client message with two fields added: `from` (player id) and `t`
 (relay receive time, ms). Senders do not receive their own messages.
@@ -129,6 +165,7 @@ The client message with two fields added: `from` (player id) and `t`
 | Limit | Value |
 | --- | --- |
 | `snapshot` rate | 30/s per player, excess dropped (not an error) |
+| `avatar` rate | 30/s per player, own budget, excess dropped (not an error) |
 | `event`/`chat` rate | 10/s per player |
 | vehicles per consist | 64 |
 | message size | 64 KiB |
