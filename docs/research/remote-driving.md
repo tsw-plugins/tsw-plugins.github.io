@@ -59,16 +59,69 @@ keeps sending avatars and does not hit the relay's 30 s idle timeout):
 6. An emulated guest that only listens was dropped by the relay after 30 s
    ("driver left (Timeout)"); the host released the seat at once.
 
+## Guest side, verified in game (Training Centre, emulated host)
+
+Setup: the game's own BR 146 host stream was recorded at the Training
+Centre (`tsw-coop-emu repl --log`, a listening guest kept alive with chat
+lines) and replayed by an emulator host `th` (`tsw-coop-emu serve`, `POST
+/clients` with a replay source:
+`dumps/tsw7-886/experiments/remote-drive-1/ttc-br146-host.jsonl`). The game
+then joined as guest and drew the ghost BR 146. Everything below ran without
+touching the game window (`boot-code.sh`, `guest-drive.sh` in the same
+folder; keys through the test command file, see below):
+
+1. F8 → guest log "asking for the host's seat", `th` receives `seat
+   {"take": true}`.
+2. `th` sends `driver {"id": <game>}` → "we drive the host's train", the
+   HUD toast with the keys, the view switches to the ghost cab
+   (`guest-cab-view.png`), measured 0 cm from the cab camera.
+3. D held 1 s → `controls` with `Throttle_F` rising by 0.5 in steps every
+   150 ms; Q held 0.6 s → `TrainBrake_F` falling from the host's value.
+4. F8, then `th` sends `driver null` → "You no longer drive the host's
+   train", view back on the pawn where it stood (`guest-left-cab.png`).
+
+### The view from the ghost cab (`mod/native/src/cab.rs`)
+
+Each cab view actor has `UInteractionEnvironmentCameraComponent`s per
+position (`Driver_F`, `Driver_B`, `Shunting_*`, ...). While driving, the
+ghost car is the player's view target with only `Driver_F` active, and
+every frame that camera is turned to the controller's rotation, so mouse
+look works. The pawn stays where it was, frozen.
+
+Tried first and dropped: attaching the pawn to the cab camera (movement off,
+collision off, its eye shifted onto the camera). The pawn camera then sat
+exactly on the cab camera, yet the player's view was 15 m back along the
+train at the rear cab's desk (`pawn-attached-rear-desk.png`), and stayed
+there after the pawn was detached and put beside the train. The driver
+pawn's own camera rig (modifiers, interaction environments) takes over
+inside a cab; the view target route avoids it.
+
+Consequence: other players see the driving guest's avatar where it stood,
+not in the cab. The pawn is also where world streaming and origin rebasing
+are anchored; a long drive away from it is untested.
+
+## Test command file (`mod/native/src/cmd.rs`)
+
+`tswcoop-cmd.txt` next to the exe, read and removed once a second: `key
+<name> [seconds]` (the mod's hotkeys see the key held, no focus needed),
+`quit`, `console <command>`. With `console ts2.dbg.LoadTimetable
+/TrainingCentre_Route_Gameplay/Timetable/TC_Timetable.TC_Timetable` the
+game goes from start to the Training Centre in 14 s with no input at all.
+To be replaced by dev endpoints on the host's planned HTTP server.
+
 ## Open
 
-- The guest's view: it should look out of the ghost cab while driving
-  (camera on the ghost view actor). Today the guest drives from wherever it
-  stands and sees the ghost train move.
-- Horn, doors, lights, emergency brake: the horn is a centre-return lever per
-  cab side (`Horn_FL`/`Horn_FR`, rest 0.5), not a button; each needs its own
-  mapping.
+- Which cab: always `Driver_F`; the host's actual driving end (and a
+  flipped lead car) is not sent yet.
+- The ghost cab's levers do not move with the host's values.
+- Horn, doors, lights, emergency brake, PZB/SIFA: the horn is a
+  centre-return lever per cab side (`Horn_FL`/`Horn_FR`, rest 0.5), safety
+  systems need acknowledge buttons; each needs its own mapping. The BR 146's
+  power handle drives the automatic speed control (AFB): with the target at
+  0 it brakes (−100 % on the HUD) whatever the throttle; that is the
+  train's own simulation, the same for a local driver.
 - Other trains: control names differ per class (combined power/brake
   handles); `KEYS` is the BR 146 set and a per-class table is the next step.
 - Emergency brake when the host leaves the cab while a guest drives (docs/08)
   is not implemented; today the seat is simply released.
-- A real second game as the guest is still untested (only the emulator).
+- A real second game as host is still untested (only the emulator).

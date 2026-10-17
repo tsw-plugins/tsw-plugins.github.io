@@ -26,6 +26,7 @@ free. The host's simulation is the only truth.
 | Players | Up to 8 per session. |
 | Platforms | PC only. Linux/Proton is a first-class target (the maintainer's setup). |
 | Spectator mode | HTTP-API-only clients may join as map spectators (no in-game presence). |
+| Host web server | Added 2026-10-17 (maintainer). The host's mod runs an HTTP server: player list, server info and an interactive map, with realtime updates over Server-Sent Events (`text/event-stream`, one-way; a WebSocket only if pages must talk back). It also carries dev endpoints (simulated hotkeys, quit, console commands) that replace the interim test command file `tswcoop-cmd.txt`. |
 | Entitlements | **Honest-client check**: the client reports installed + licensed route/loco DLC (Steam local API + asset presence); the host refuses joins that lack the route or any vehicle currently spawned. Not forgery-proof by design. |
 | Mod sync | Host → guest sync of the coop mod version/config and **data-only** content (liveries, reskins, scenario data). Never DLLs or Lua. Version mismatch = refuse join with a download hint. |
 | Anticheat | Host validates every guest message (plausible movement, rate limits, no spawn/teleport/cheat requests at all). Guests also sanity-check the host and leave with a warning on impossible or malformed updates. |
@@ -119,8 +120,9 @@ id. Reasons:
   seat it.
 - Driver handover is built for the BR 146 (`docs/research/remote-driving.md`):
   seat, driver announcement, lever values applied by the host, F8 reclaim.
-  Not yet: emergency brake when the host leaves the cab, per-class control
-  tables, the guest's view from the ghost cab.
+  The driving guest looks out of the ghost cab (view target, pawn stays
+  put). Not yet: emergency brake when the host leaves the cab, per-class
+  control tables, which cab end, moving ghost levers.
 - Ghost lifecycle (05 §10f): `SpawnFormation` ghosts register in track
   occupancy, cannot be repositioned at the physics level while kinematic,
   and `K2_DestroyActor` leaves a stale occupancy GUID. Signal aspects are
