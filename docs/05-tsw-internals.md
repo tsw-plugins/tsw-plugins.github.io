@@ -232,12 +232,46 @@ plugin must be installed.
   `TS2Prototype` and the `RVM_*_C` naming hold.
 - The HTTP API's `GameBuildNumber` is 886 for Steam buildid 25890949.
 
-## 10. Next verification steps (need the game)
+## 10. Spawn experiment results (2026-10-17, Training Centre)
 
-1. Lua experiment: call `UTimetableRuntimeExtensionLibrary::SpawnFormation`
-   near the driver pawn with a `UTrainFormation` found by
-   `FindSpawnableFormations`, then read `SimPhysicsEnabledState` and try
-   `Kinematic` + `SetOverrideLocation`. This decides A vs B in one session.
+Mod: `dumps/tsw7-886/experiments/spawn-success-2/main.lua` (Lua, UE4SS zDEV).
+
+- **Attempt 1 crashed the game**: `SpawnFormation` was called from the
+  `LoopAsync` thread and the engine asserted in the async package loader
+  (`Package_LoadSummary has zero prerequisites, but has not been queued` for
+  the wagon's end-of-train-device model). Rule confirmed: every UObject call
+  goes through `ExecuteInGameThread`. Crash context in
+  `experiments/spawn-crash-1/`.
+- **Attempt 2 worked, no crash.** `FindTrainSpawnLocationNearDriverPawn(pawn, 5000)`
+  returned a ribbon location; `SpawnFormation(pawn, FRM_TTC_16TMineral_Loaded,
+  loc, Forwards)` produced one new `RVM_TTC_16TMineral_C` actor ~2 s later,
+  which rendered as a loaded mineral wagon on the platform track next to the
+  player's Class 323 (`experiments/spawn-success-2/screenshot.png`).
+- `FindSpawnableFormations({...})` returned nothing for every search term
+  tried; picking an already loaded `UTrainFormation` via `FindAllOf` works.
+  Only formations whose content is loaded on the current map are safe to
+  spawn without a prior `RequestContentLoadSynchronous`.
+- Freshly spawned, the vehicle reported `SimPhysicsEnabledState = 1`
+  (Kinematic) and `CurrentPhysicsMode = 2` (Kinematic) before we touched
+  them, so the spawner leaves a consist kinematic until a preset is applied.
+  Writing the two properties from Lua succeeded.
+- `K2_GetActorLocation()` on the model actor returns (0, 0, 0): model actors
+  live in far space, so position must be read via
+  `RailVehiclePhysicsComponent:GetPosition()` / `GetWorldTransform()` or
+  from `GetViewActor()`. Because of that, the `SetOverrideLocation` test is
+  inconclusive (delta measured on the wrong actor); redo it reading the far
+  position and the view actor.
+
+**Decision: strategy B is viable.** Real `RVM_*` actors spawn through the
+game's own path, start kinematic, and render through their view actor. No
+mesh-cloning fallback is needed for v1.
+
+## 11. Next verification steps (need the game)
+
+1. Re-run the spawn with far-position readout
+   (`GetPosition`, `GetWorldTransform`, `GetViewActor():K2_GetActorLocation`)
+   before and after `SetOverrideLocation` and `SetOverrideSpeed`, and try
+   moving the view actor directly.
 2. Read `URailVehicleComponent::GetWorldTransform()` for the player's
    vehicle at 10 Hz and compare with `DriverAid.PlayerInfo.geoLocation`.
 3. Dump a real route (not the Training Centre) to see how many
@@ -245,3 +279,5 @@ plugin must be installed.
    populated outside yards.
 4. Poke `OccupationRailVehicleIds` for one section from Lua and watch the
    protecting signal.
+5. Despawn: find the counterpart of `SpawnFormation` (`ATrainSpawner::DespawnConsist`
+   or destroying the actors) and confirm no dangling dispatcher entries.
