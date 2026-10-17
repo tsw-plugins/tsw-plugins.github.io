@@ -112,7 +112,6 @@ between; the static page reads only that.
 | `name`, `motd` | ≤ 64 / ≤ 256 characters, control and bidi characters stripped | relay |
 | `password` | optional | relay before forwarding any traffic; host may re-check |
 | `max_players` | 2–8 (docs/08 limit) | relay at join (count plus pending), with an explicit "full" error; host may kick |
-| `show_players` | player names in the public query and on the master (host decides, default off); without it the listing has no `names` array but still the player count | relay |
 
 Password: the host sends a salted hash (Argon2id) to the relay when opening
 the session; a joiner sends the password over `wss://` (TLS to the relay);
@@ -134,12 +133,12 @@ then back off), never logs it, and only `has_password` leaves the relay.
   "started_at": "2026-10-17T19:00:00Z", "names": ["blu", "rd"] }
 ```
 
-`names` only with `show_players`; without it the field is left out and `players` (the count) stays. Live map data (positions) is a separate,
+**Public means everything is public** (maintainer, 2026-10-17): a session the host marks public shows all of it, player names and the live map included; the only thing a password protects is joining. A session that is not public is reachable only with its code and lists nothing. Live map data (positions) is a separate,
 opt-in stream: `GET /v1/sessions/{code}/events` (SSE) relayed from what the
 relay already forwards (snapshots and avatars, thinned to 1–2 Hz), so the
 Pages map works for anyone with the code without touching the host's PC.
-The host decides whether its session's map is visible (`public_map`, off
-by default; a password-protected session's map needs the password).
+For a public session the map stream is open to anyone; for a private one
+only to holders of the code.
 
 ### Master server and browser
 
@@ -153,9 +152,10 @@ by default; a password-protected session's map needs the password).
   listings. Caps: sessions per relay, sessions per host IP at the relay,
   heartbeats per relay.
 - **Hosting (maintainer, 2026-10-17):** the master backend runs as a Docker
-  container on the NAS, reachable from the internet through Tailscale
-  Funnel or a Cloudflare Tunnel (either gives it a public HTTPS name
-  without opening ports). Its API needs CORS for the Pages origin.
+  container on the NAS, published through the existing Cloudflare Tunnel
+  (a `*.minopia.de` hostname) and/or Tailscale Funnel; both are already set
+  up on the NAS (skills-private `unraid-docker-vm-nas.md` §5,
+  `network.md`), so either or both. Its API needs CORS for the Pages origin.
 - **The UI is a GitHub Pages site**, a server list with a details page per
   session (query fields, player names if the host shares them, live map if
   enabled). Address: `tsw-coop.github.io` needs a GitHub account or
@@ -217,12 +217,9 @@ in-process relay.
   the same for the default public relay (it carries the game traffic, see
   the bandwidth table), and which of the two tunnels (Cloudflare's terms
   and WebSocket limits vs. Funnel's bandwidth).
-- ~~Player names in the listing?~~ Answered: the host decides
-  (`show_players`); without it only the count is shown.
-- Account-free listing (anyone can host) or tie public listing to
-  something (a GitHub login, a per-relay key only)?
-- Should a public session's live map be visible to strangers at all, or
-  only to people with the code?
+- ~~Player names, map, who may list?~~ Answered 2026-10-17: the host's
+  "public" switch is the only gate; a public session is fully visible
+  (names, map); a password only guards joining. No account needed.
 - Pages address: create a `tsw-coop` GitHub organisation for
   `tsw-coop.github.io`, or use the repository's project site?
 
