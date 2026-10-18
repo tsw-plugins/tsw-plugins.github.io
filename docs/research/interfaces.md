@@ -249,11 +249,17 @@ Verified, each checked with `GetCurrentRoute`/`GetCurrentScenario`/`GetTimetable
 A timetable session puts the player on foot at the route's default spawn. To drive a particular
 service, use `ts2.dbg.JumpToService` or `drive spawn`.
 
-Free Roam has no entry point yet. `UDriveModeSettings` (`FrontEndDriveModeSettings` on the game
-instance) has `bSandboxMode`, `Timetable`, `InitialTimetableService`, `TrainEntry` and
-`bSpawnDriving`; the front end fills these in Blueprint before it travels. No native "start"
-function was found. Spawned trains derail in Free Roam anyway (above), so timetable mode is the
-better test bed.
+Free Roam has no native "start" function. `UDriveModeSettings` (`FrontEndDriveModeSettings` on
+the game instance) has `bSandboxMode`, `bClearTimetable`, `SandboxManagerClass`, `Timetable`,
+`InitialTimetableService`, `TrainEntry` and `bSpawnDriving`; the front end
+(`WBP_Artemis_GameplayModeSelectWidget:OpenFreeroamMenu`) fills these in Blueprint, and
+`UTS2MainMenuWidget::Load()` loads whatever they hold (`GetDriveModeSettings()` returns them).
+2026-10-18, from the headers and the object dump, not yet run: `play <route> free` (`play.lua`)
+sets the route's first timetable, `bSandboxMode`, `bClearTimetable`, `bSpawnDriving = false`
+and `SandboxManagerClass = /Game/Core/Sandbox/BP_SandboxManager.BP_SandboxManager_C` on the main
+menu's settings, then calls `Load()`. To check in game: whether it lands in Free Roam ("Freies
+Spiel"), and whether `Timetable` must be the route's or may stay empty. Spawned trains derail in
+Free Roam anyway (above), so timetable mode is the better test bed.
 
 ## Recommendations
 

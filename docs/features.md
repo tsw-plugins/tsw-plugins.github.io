@@ -24,7 +24,7 @@ git history).
 | Feature | Description | Started | Finished | Harness | In game |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | UE4SS zDEV + dumps | UE4SS zDEV in the game, object/UHT/CXX dumps and usmap committed (`dumps/tsw7-886/`) | ✅ | ✅ | ➖ | ✅ |
-| Game lifecycle by code | `tswup`: launch the game and load a scenario, timetable or path without menus (`scripts/tswup`, `play.lua`); Free Roam cannot be started yet | ✅ | 🟡 | 🟡 | ✅ |
+| Game lifecycle by code | `tswup`: launch the game and load a scenario, timetable or path without menus (`scripts/tswup`, `play.lua`); Free Roam through the main menu's own settings and `Load()` (`tswup play <route> free`) | ✅ | ✅ | ✅ (`test_play` incl. Free Roam settings, `tswup` against stubbed `pgrep`/`tswcmd`) | 🟡 (scenarios and timetables yes, Free Roam not yet) |
 | Drive status command | `tswcmd drive diag`: everything that matters for driving the current train, with a verdict (Lua) | ✅ | ✅ | ✅ | ✅ |
 | Drive "start" command | `tswcmd drive ready/go/stop`: any state to drivable / moving (Lua, `docs/research/driving-trains.md`) | ✅ | ✅ | ✅ | ✅ |
 | Drive spawn command | spawn a train and make it drivable in one command (Lua, `spawn.lua`) | ✅ | ✅ | ✅ (`test_spawn`: blocked point skipped, board, ready, no clear track, refusal unless forced) | ✅ (before the move into `spawn.lua`; unchanged code) |
