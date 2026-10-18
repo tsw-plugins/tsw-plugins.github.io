@@ -71,7 +71,7 @@ git history).
 | Guest cab view | the driving guest looks out of the ghost cab | ✅ | ✅ | ❌ | 🟡 (emulated host) |
 | Stop on a lost driver | the host's train stops when the driving guest leaves or is silent for 4 s | ✅ | ✅ | ✅ | ❌ |
 | Brake when the host leaves | the train the host leaves (out of the cab for 2 s, or into another train at once) gets power off and full train brake; a remote driver loses the seat with it (`drive/leave.rs`) | ✅ | ✅ | ✅ (decision tests incl. a 2 s grace for camera changes) | ❌ |
-| Other train classes | control tables beyond the BR 146 | ❌ | ❌ | ❌ | ❌ |
+| Other train classes | guests drive by role (`power`, `brake`, `reverser`); the host picks each role's lever per class (BR 146, Class 66, Doppelstock cab car, 8F steam, Class 323 combined handle, from the object dump) and sends its range; not yet: the rear cab | ✅ | 🟡 (rear cab) | ✅ (lever choice per class, ranges, combined-handle stop) | ❌ |
 
 ## Sessions, joining, discovery
 

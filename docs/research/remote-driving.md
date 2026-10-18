@@ -11,17 +11,35 @@ lever values.
 | --- | --- | --- | --- |
 | `seat` | guest → host | `{"take": true\|false}` | ask for / give up the host's seat (F8 on the guest) |
 | `driver` | host → room | `{"id": "<player>"\|null}` | who drives; on every change and every 5 s for late joiners |
-| `controls` | driver → host | `{"Throttle_F": 0.3, ...}` | lever values that changed, at most every 150 ms |
+| `controls` | driver → host | `{"power": 0.3, ...}` | lever values that changed, at most every 150 ms |
 
-The host's `snapshot.controls` carries the current values of the remotely
-drivable controls, so a driver starts from the real lever positions and
-re-syncs to them one second after its last key press.
+The host's `snapshot.controls` carries the current value of each role and
+its lever's range (`power`, `power_range: [min, max]`, ...), so a driver
+starts from the real lever positions, stays within the lever, and re-syncs
+to them one second after its last key press.
 
 Host rules: a free seat goes to the first asker, only while the host itself
 drives a train; F8 on the host takes it back; a driver who leaves (or times
 out) loses it; `controls` from anyone but the driver are ignored. Only the
-names in `KEYS` are accepted (`Throttle_F`, `TrainBrake_F`, `Reverser_F`),
-each clamped to the control's own input range.
+roles in `KEYS` are accepted (`power`, `brake`, `reverser`), each set on
+the lever `drive/levers.rs` picks for the train and clamped to its range.
+
+Per class (from the object dump of the Training Centre's trains, until
+2026-10-18 only the BR 146 names were used and tested):
+
+| Class | power | brake | reverser |
+| --- | --- | --- | --- |
+| BR 146 | `Throttle_F` | `TrainBrake_F` | `Reverser_F` |
+| Class 66 | `Throttle_F` | `F_AutoBrake` | `Reverser_F` |
+| Doppelstock cab car | `Throttle` | `TrainBrake` | `Reverser` |
+| 8F (steam) | `Regulator` | `VacuumBrake` | `Reverser_RailDriver` |
+| Class 323 | `PowerBrakeHandle` (combined) | — | `Reverser` |
+
+Stopping a train (lost driver, host left it) sets power 0 and brake 1;
+with a combined handle the handle goes to its low end, which brakes
+(`docs/research/interfaces.md`: 0.5 neutral, below it brakes). Untested in
+game beyond the BR 146: whether 1 is full application on the Class 66
+automatic brake and the 8F vacuum brake.
 
 Guest keys while driving (only with the game window focused; the guest's
 own pawn ignores movement input meanwhile): A/D throttle, Q/E train brake,
@@ -120,8 +138,8 @@ To be replaced by dev endpoints on the host's planned HTTP server.
   power handle drives the automatic speed control (AFB): with the target at
   0 it brakes (−100 % on the HUD) whatever the throttle; that is the
   train's own simulation, the same for a local driver.
-- Other trains: control names differ per class (combined power/brake
-  handles); `KEYS` is the BR 146 set and a per-class table is the next step.
-- Emergency brake when the host leaves the cab while a guest drives (docs/08)
-  is not implemented; today the seat is simply released.
+- Other trains: the per-class table above is built (2026-10-18) but only
+  the BR 146 was driven in game; the rear cab (`_B`) is not chosen yet.
+- The host leaving its train (2 s out of the cab, or into another train)
+  now stops it (`drive/leave.rs`), untested in game.
 - A real second game as host is still untested (only the emulator).
