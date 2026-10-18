@@ -327,12 +327,48 @@ tsw-coop's DLL, on the main menu:
 | ![Before AddToViewport](../research/img/native-menus-stack-hidden.jpg) | `OpenCreatedWidget` alone: home tiles hidden, our screen not shown |
 | ![Plugins screen](../research/img/native-menus-plugins.jpg) | After `AddToViewport` |
 
+## Built: tsw_ui (2026-10-18, build 886)
+
+The spike became the `tsw_ui` plugin in tsw-sdk (`crates/tsw-ui`), uniloader's `overlay`
+service provider for TSW. What it took, beyond the spike:
+
+- **The game's element blueprints work when made at run time.** `CreateWidget` of
+  `DialogButton_C`, `CheckboxWidget_C`, `MainMenuSlider_C` and `DialogWidget_C` gives the real
+  thing, sounds and focus included. Their variables (`buttonText`, `Text`/`Checked`,
+  `Title`/`Slider`/`TitleText`, `Button1`/`Button2`/`DescriptionScrollbox`) were read from a
+  runtime dump of the classes (`tsw.dump <path>` does that now).
+- **Set blueprint variables before the widget is shown, call setters after.** `PreConstruct`
+  copies the variables into the parts, so a button's text and custom colours go into the
+  variables first. The other way round: `SetDialogData` before the dialog is on the stack came
+  out with blank buttons, because construction reset them; after `OpenCreatedWidget` it works.
+- **Colours.** The elements are made for the game's light settings pages. On our dark panels the
+  button colours are set through `DialogButton_C`'s own `UseCustomColors`, and the checkbox and
+  slider texts are recoloured after construction.
+- **Blueprint function frames.** `ProcessEvent` copies only the `CPF_Parm` part of a frame;
+  locals follow and are not ours to size.
+- **Clicks without hooks** are still the inner button's `IsPressed` falling while hovered or
+  focused, and a real mouse click on the dialog's OK answered it.
+- **Immediate-mode panels on retained widgets.** A plugin draws its panel every frame through
+  the overlay service; tsw_ui records the rows, rebuilds the screen only when their shape
+  changes and otherwise syncs values both ways.
+- **Notifications.** In a route a toast is the game's HUD toast (`Toaster`); in the menus,
+  where there is no HUD, it is a card on a click-through layer of ours (a bare
+  `TS2MainMenuWidget` in the viewport at Z 20). Other plugins must not mistake that layer for a
+  game screen: coop's badge did, until it accepted only `/Game/...` classes.
+- **Splash screens are on the main stack too.** A panel opened before the main menu was cleared
+  with them; panels now wait until the top of the stack is not a splash or intro screen.
+- **Settings entry.** A "Plugins" `DialogButton_C` added to `MainMenuSettigns_C`'s (sic)
+  `CategoryButtonsWrapBox` while that screen is up.
+
+| | |
+| :--- | :--- |
+| ![The game's dialog](../research/img/native-menus-dialog.jpg) | `tsw_ui.dialog confirm`: the game's `DialogWidget_C` with our texts |
+| ![A settings screen](../research/img/native-menus-settings.jpg) | The kitchen sink's settings, made of the game's checkboxes, sliders and buttons (before the texts were lightened) |
+
 ## Open (to verify in game)
 
-- A real mouse click on the indicator (hover is proven).
 - Esc with the keyboard on our screen (the `MenuBack` call is proven).
-- The pause menu in a route (`ATS2GameHUD`): indicator placement and `OpenCreatedWidget` there.
-- The exact variable names and types inside `ScreenButton_C` / `MainTileButton_C`
-  (`ButtonText`, `Button`) as reflected at runtime. Dump their properties once on the main menu.
-- `SetDialogData` parameter layout (BP function) for reusing `DialogWidget_C`.
+- The pause menu in a route (`ATS2GameHUD`): placement and `OpenCreatedWidget` there, and the
+  game's toasts from tsw_ui.
+- The Settings screen's "Plugins" button, clicked.
 - Whether the indicator corner collides with any screen's prompts.
