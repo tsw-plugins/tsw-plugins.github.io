@@ -4,7 +4,7 @@ description: >-
   Index of the Train Sim World 7 research notes: the game's internals, interfaces into the running game, driving trains from code, UE4SS pitfalls, sessions, avatars, ghosts, performance, plus the early studies (loader comparison, prior art, community findings).
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-17T11:59+0200
-last_edited: 2026-10-18T11:56+0200
+last_edited: 2026-10-18T22:56+0200
 ---
 
 # Research notes ("Erkenntnisse")
@@ -26,6 +26,7 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [remote-driving.md](remote-driving.md) | A guest drives the host's train: seat and lever messages, applying values on the host, verified in game |
 | [ghosts-native.md](ghosts-native.md) | Ghost trains from the Rust DLL: what the host sends, spawning options, the view-actor ghosts that were built |
 | [avatars.md](avatars.md) | Bodies for other players: a plain Character dressed from the modular character meshes, animation assets |
+| [other-editions.md](other-editions.md) | Train Sim World 5: everything loads and works; what differed (menu look, Steamworks 1.47, hard-coded "7"s) and the fixes |
 | [game-state-journal.md](game-state-journal.md) | The game state journal and crash reports, and the start-up skip |
 | [mod-sync.md](mod-sync.md) | Bringing guests the host's mod version, config and data-only content (liveries) |
 | [ue4ss-cpp-toolchain.md](ue4ss-cpp-toolchain.md) | Historical: building a UE4SS C++ mod on Linux without MSVC |
