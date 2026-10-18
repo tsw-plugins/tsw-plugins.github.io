@@ -5,7 +5,7 @@ description: >-
 game_build: 886 (TSW 7, Steam build 25890949)
 status: proposal
 created: 2026-10-18T11:47+0200
-last_edited: 2026-10-18T11:47+0200
+last_edited: 2026-10-18T12:30+0200
 ---
 
 # Native, mouse-driven menus (2026-10-18)
@@ -296,10 +296,42 @@ Back closes it.
 4. Port the F9 menu, scoreboard and chat input onto these screens; remove the key-driven overlays.
 5. Only if 3a proves limiting: the 3b thunk, then footer key prompts.
 
+## Seen in game (2026-10-18, build 886)
+
+First spike, in tsw-sdk (`crates/tsw-sdk-host/src/indicator.rs`, `screens.rs`), linked into
+tsw-coop's DLL, on the main menu:
+
+- **The puzzle indicator works.** A `UButton` (background alpha 0) holding a `SizeBox` + `UImage`
+  of `Win64/tsw/puzzle.png`, placed on `MainMenu_C`'s root canvas at the bottom left (24 px in).
+  It does not collide with the "Auswählen" prompt next to it.
+- **Hover polling works:** `IsHovered` on the button turned true when the mouse went over it.
+  `SetToolTipText` gives Slate's own tooltip, multi-line, at the cursor. Click (`IsPressed` falling
+  while hovered) is wired but not yet seen with a real mouse.
+- **`Create` of the native `TS2MainMenuWidget` gives an empty widget tree.** Setting
+  `WidgetTree.RootWidget` to our canvas (a plain pointer write; the GC finds it through the
+  property) is enough for it to render.
+- **`OpenCreatedWidget` puts the widget on the stack but does not show it.** The HUD collapsed
+  `HomeScreen_C` (screen below), kept the nav bar, header and footer, but our widget was not in the
+  viewport. `AddToViewport(5)` after the call shows it in the game's frame.
+- **Back is the game's.** `MenuBack(1, Main, …)` (what Esc calls) hid our widget (visibility
+  Hidden, still in the viewport) and brought the home tiles back. We remove the hidden widget
+  before opening the next one.
+- **UE4SS version line:** from the banner in this run's `ue4ss/UE4SS.log` ("v3.0.1 Beta") and
+  `UE4SS.dll`'s PE link time (2026-05-09).
+- Test without the mouse: `devapi.sh plugins` (`POST /dev/plugins`) opens the screen as a click
+  does; `devapi.sh shot` for the picture.
+
+| | |
+| :--- | :--- |
+| ![Tooltip and Plugins screen](../research/img/native-menus-tooltip.jpg) | The Plugins screen on the game's stack, the indicator's tooltip at the bottom left |
+| ![Before AddToViewport](../research/img/native-menus-stack-hidden.jpg) | `OpenCreatedWidget` alone: home tiles hidden, our screen not shown |
+| ![Plugins screen](../research/img/native-menus-plugins.jpg) | After `AddToViewport` |
+
 ## Open (to verify in game)
 
-- `Create` of a native `TS2MainMenuWidget` yields an empty `WidgetTree`, and `OpenCreatedWidget`
-  shows it with our `RootWidget` (fades use `FadeLayers`; an empty array is assumed to be fine).
+- A real mouse click on the indicator (hover is proven).
+- Esc with the keyboard on our screen (the `MenuBack` call is proven).
+- The pause menu in a route (`ATS2GameHUD`): indicator placement and `OpenCreatedWidget` there.
 - The exact variable names and types inside `ScreenButton_C` / `MainTileButton_C`
   (`ButtonText`, `Button`) as reflected at runtime. Dump their properties once on the main menu.
 - `SetDialogData` parameter layout (BP function) for reusing `DialogWidget_C`.

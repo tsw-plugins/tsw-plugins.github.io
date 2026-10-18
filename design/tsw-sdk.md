@@ -732,12 +732,25 @@ research/                     README.md index + every docs/research/*.md + 05-ts
 - `docs/` of tsw-coop is copied into the site repo, with the history kept by `git filter-repo --path docs/` into a branch that is merged there.
 - Relative links are rewritten to the tree above.
 - tsw-coop's `docs/` is deleted, and its `AGENTS.md` and `README.md` link to the site.
-- New research goes straight into a local checkout of the site repo (`/run/media/system/Data/Projects/tsw-plugins.github.io`), as the DayZ agents do.
+- New research goes straight into a local checkout of the site repo (`/run/media/system/Data/Projects/tsw-plugins/tsw-plugins.github.io`), as the DayZ agents do.
 - Until then, `docs/research/` in tsw-coop stays authoritative.
 
 ---
 
 ## 9. Migration plan
+
+**Progress (2026-10-18).** The owner asked for the repo split right away, so step 8's layout came
+first and step 1 happened across repos instead of inside tsw-coop. Local checkouts sit side by side
+in `Projects/tsw-plugins/` (`tsw-sdk`, `tsw-coop`, `tsw-jump`, `tsw-mp`, `tsw-plugins.github.io`),
+with each repo's `origin` set to the org but nothing pushed.
+
+| Step | Status |
+| --- | --- |
+| 1 | Done, with the modules in the `tsw-sdk` repo (`crates/tsw-sdk-host`, an rlib) rather than a `sdk/` workspace inside tsw-coop. tsw-coop links it by relative path. `sys/proxy.rs` and `sys/shell.rs` (DLL entry and link handler) stay in tsw-coop. Gates pass: tsw-coop 68 Wine tests, SDK 14, jump 2. The in-game log matches: scan, tick, menu badge. |
+| 4 (part) | `jump.rs` is the `tsw-jump` crate on the SDK's API, still linked into tsw-coop. There is no plugin loader yet. |
+| 6 | Done: the C++ shim, probe, C ABI and header were removed (tsw-coop `4081acf`). |
+| 8 | Repos split without `filter-repo`: the moved files carry a pointer to their source commit. The docs moved with history (`git filter-branch`). Coop still uses path dependencies, not tags. |
+| 3 (part) | The plugin indicator and the Plugins screen exist (native-menus "Seen in game"). Plugin management is not built yet. |
 
 Each step ends in a state that ships and is tested. "In game" means the existing checks: `tswup`,
 `devapi.sh` (key, console, shot), crowd bots, the hosted-session test (`docs/research/hosted-session-test.md`).
