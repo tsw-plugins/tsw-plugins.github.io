@@ -58,7 +58,7 @@ git history).
 | In-game chat | F6 chat box, toasts, chat panel in the web view, through the relay | ✅ | ✅ | ✅ | 🟡 (bot chat in the log only) |
 | Host's train on guests | the host's consist drawn on guests as view actors following its snapshots | ✅ | ✅ | 🟡 | ✅ (replayed host) |
 | AI traffic on guests | the host's AI trains drawn on guests | ✅ | 🟡 (on the web map only) | ❌ | ❌ |
-| Guest AI suppression | guests switch off their own AI, dispatcher, clock and weather | ❌ | ❌ | ❌ | ❌ |
+| Guest AI suppression | guests switch off their own AI, dispatcher, clock and weather: their own timetable's AI vehicles are hidden without collision (not destroyed, so the timetable stays intact; shown again after the session, `quiet.rs`), the host's clock, weather, junctions and signals override their own | ✅ | ✅ | 🟡 (hide decision test; engine side only in game) | ❌ |
 | Signals, switches, time, weather | host-authoritative and replicated to guests; time: a guest more than 30 s off the host's snapshot `clock` sets its world clock to it (`clock_sync.rs`, `SetDateTime`); weather: the host announces its weather scenario class (`weather` event), a guest switches to it (`weather.rs`, `OverrideScenario`); switches and signals: the host sends junction lever states and signal aspects by object path (`junctions`, `signals` events: changes first, the rest in turn), a guest sets what differs (`world.rs`) | ✅ | ✅ | ✅ (clock, weather and resend-order tests; engine calls only in game) | ❌ |
 | One session, any route | a guest on another route is told where the host is; the host refuses its driving | ✅ | ✅ | ✅ | ❌ |
 | Game build and timetable | the game's build number and the world's timetable in `hello` and rooms | ✅ | ✅ | ✅ | ❌ |
