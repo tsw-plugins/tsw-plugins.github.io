@@ -252,9 +252,22 @@ at once, first answer wins (as OpenOMSI does):
    on request; renewal (after 10 min) not yet seen. Fritz!OS only accepts
    mappings from devices with "allow independent port sharing" (Selbstständige
    Portfreigaben) switched on; otherwise the router refuses and the log
-   says so. Not built: PCP and NAT-PMP (most home routers speak UPnP-IGD;
-   Fritz!Box does), IPv6 pinholes (IGDv2 WANIPv6FirewallControl). Under
-   Proton: still to try whether the SSDP multicast gets out.
+   says so. Under Proton: still to try whether the SSDP multicast gets out.
+   **PCP, NAT-PMP and IPv6 pinholes built (2026-10-18)**, without new
+   dependencies (`portmap/pcp.rs`, plain UDP to port 5351): when UPnP-IGD
+   finds no router or the router refuses, the mod asks the default gateway
+   (the UPnP router, the default route from `/proc/net/route`, which Proton
+   reads through Wine's `Z:` drive, then `.1` of the LAN) with PCP MAP,
+   and with NAT-PMP when the router answers PCP with "unsupported version"
+   or not at all. A host with a global IPv6 address also asks the IPv6
+   default gateway (`/proc/net/ipv6_route`) for a PCP pinhole, independent
+   of the IPv4 mapping (DS-Lite: no IPv4 mapping possible, IPv6 open).
+   Probing the maintainer's Fritz!Box: it answers PCP (version 2, ANNOUNCE
+   succeeds) and replies to NAT-PMP with a PCP header, i.e. no NAT-PMP.
+   `portmap -- pcp 7499 5` mapped TCP and UDP there over PCP (the router
+   grants 120 s leases, renewed at half) and removed both. No IPv6 on this
+   LAN, so the pinhole is tested against a fake server only. Not built:
+   IGDv2 WANIPv6FirewallControl (PCP covers the Fritz!Box).
 4. Manual port forward (the host enters its public address/port, or the
    mod learns the public address from STUN).
 5. Hole punching (later): needs both sides' addresses at the same moment,
