@@ -107,7 +107,7 @@ git history).
 | Feature | Description | Started | Finished | Harness | In game |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | Small sync traffic | `snap1` binary deltas, dead reckoning, stream deflate | ✅ | ✅ | ✅ | 🟡 (in use, not measured in game) |
-| UPnP port mapping | the host's router forwards the port (TCP, and UDP with QUIC) | ✅ | ✅ | 🟡 | 🟡 (TCP yes, UDP no) |
+| UPnP port mapping | the host's router forwards the port (TCP, and UDP with QUIC) | ✅ | ✅ | ✅ (fake IGD: permanent-lease fallback, TCP+UDP mapped and removed on drop, no mapping behind NAT; fake PCP/NAT-PMP routers) | 🟡 (TCP yes, UDP no) |
 | PCP / NAT-PMP / IPv6 pinholes | PCP and NAT-PMP at the default gateway when UPnP-IGD gives no mapping; an IPv6 firewall pinhole by PCP when the host has a global IPv6 address | ✅ | ✅ | ✅ (fake routers; PCP mapped and removed on the real Fritz!Box; IPv6 only against a fake, no IPv6 here) | ❌ |
 | QUIC transport | iroh QUIC beside WebSocket, host key verified, dial race | ✅ | ✅ | ✅ | ❌ |
 | Hole punching | NAT traversal when the host cannot be reached directly: host opt-in `nat_relay = n0` (or an own iroh relay); the relay goes into the invite, guests meet the host there and iroh punches a direct path (decided: relay as rendezvous, not the master) | ✅ | ✅ | ✅ (iroh test relay, guest with no reachable address) | ❌ |
