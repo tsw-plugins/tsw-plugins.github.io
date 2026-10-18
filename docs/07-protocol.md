@@ -172,6 +172,7 @@ Events the mod uses today (the relay passes any name):
 | `weather` | host → room | `{"scenario": class path}`: the host's weather scenario, on change and every 10 s; a guest switches to it (`OverrideScenario`) |
 | `junctions` | host → room | `{path: state}`: junction lever states (`GetJunctionState`), changes first, then the rest in turn, ≤ 40 per event, ≤ 1/s; a guest sets what differs (`TransitionToState`) |
 | `signals` | host → room | `{path: aspect class path}`: signal aspects, sent like `junctions`; a guest sets what differs (`SetSignalAspect`) |
+| `traffic` | host → room | `{vehicle id: {"view": class path, "flipped": bool}}`: the world's other vehicles (not the host's train), read every 5 s, sent like `junctions` (≤ 3 events per update); their positions are in the host's snapshots |
 
 The host's clock needs no event: guests follow the snapshot `clock`
 (more than 30 s off: set to it).
