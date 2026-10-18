@@ -1,0 +1,65 @@
+/* tsw-coop session browser: the same palette as the mod's own web view
+   (mod/native/src/web/map.html). */
+:root {
+  --bg: #f4f5f7; --panel: #ffffff; --text: #1d2330; --muted: #69707d; --line: #dfe2e8;
+  --grid: #e7e9ee; --train: #d6452f; --me: #1f6feb; --player: #2a9d5c; --host: #b7791f;
+  --live: #2a9d5c; --dead: #c0392b; --accent: #1f6feb;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151b; --panel: #1a1e26; --text: #e4e7ec; --muted: #8a92a0; --line: #2a303b;
+    --grid: #1f242d; --train: #ff6b52; --me: #5b9dff; --player: #4cc985; --host: #e0a440;
+    --live: #4cc985; --dead: #ff6b6b; --accent: #5b9dff;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+a { color: var(--accent); }
+header { background: var(--panel); border-bottom: 1px solid var(--line); }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+header .wrap { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+header h1 { font-size: 18px; margin: 0; margin-right: auto; }
+header h1 a { color: inherit; text-decoration: none; }
+form.code { display: flex; gap: 6px; }
+input, button { font: inherit; border-radius: 6px; border: 1px solid var(--line); padding: 6px 10px;
+  background: var(--panel); color: var(--text); }
+input { min-width: 0; }
+button { cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 20px 0 8px; }
+.muted { color: var(--muted); }
+.note { color: var(--dead); min-height: 1.4em; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 8px; overflow: hidden; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--grid); }
+tbody tr:last-child td { border-bottom: 0; }
+td.name { font-weight: 600; word-break: break-word; }
+td.name .motd { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.badge { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 9px;
+  border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.badge.host { color: var(--host); border-color: var(--host); }
+.grid { display: grid; grid-template-columns: 340px 1fr; gap: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+.kv > :nth-child(odd) { color: var(--muted); }
+.kv > :nth-child(even) { word-break: break-word; }
+.invite { font: 12px ui-monospace, monospace; word-break: break-all; background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin: 6px 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; }
+#mapBox { position: relative; min-height: 480px; padding: 0; overflow: hidden; }
+#map { display: block; width: 100%; height: 100%; min-height: 480px; cursor: grab; touch-action: none; }
+#mapNote { position: absolute; left: 12px; top: 12px; font-size: 12px; color: var(--muted); }
+#scale { position: absolute; left: 12px; bottom: 12px; font-size: 12px; color: var(--muted); }
+#scale i { display: block; height: 4px; border: 1px solid var(--muted); border-top: 0; margin-top: 2px; }
+ul.plain { list-style: none; margin: 0; padding: 0; }
+ul.plain li { padding: 3px 0; }
+footer { color: var(--muted); font-size: 12px; }
+@media (max-width: 760px) {
+  .grid { grid-template-columns: 1fr; }
+  .hide-narrow { display: none; }
+  th, td { padding: 6px; }
+}
