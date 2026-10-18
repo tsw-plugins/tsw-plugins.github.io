@@ -47,14 +47,14 @@ git history).
 | Feature | Description | Started | Finished | Harness | In game |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | Player bodies | remote players as walking bodies: walk, run, jump, crouch, sit, removed when silent | ✅ | ✅ | ✅ | ✅ (bots) |
-| Real crouch animation | male hiker crouch (`CH_M_hiker1`), bench sit as fallback | ✅ | ✅ | ❌ | ❌ |
+| Real crouch animation | male hiker crouch (`CH_M_hiker1`), bench sit as fallback | ✅ | ✅ | ✅ (`mod_assets`: the crouch and every other asset path the mod loads exist in the installed game's paks) | ❌ |
 | Jump on Space | optional jump on Space instead of photo mode (photo mode to O); Lua only, Rust sends the jump state from vertical speed | ✅ | 🟡 | 🟡 | 🟡 |
 | Jump synced in MP | other players see a player jump | ✅ | ✅ | ✅ | ✅ (bots) |
 | Name tags | name, Dovetail Live level and country above each body, facing the camera, scaled with distance | ✅ | ✅ | ✅ | ✅ |
 | TAB scoreboard | names, ids, levels, flags, host/you; refused and banned joins section | ✅ | ✅ | ✅ | 🟡 (refused section not yet) |
 | Countries from IP | the host derives countries from addresses (GeoLite2 from GitHub), clients' claims ignored | ✅ | ✅ | ✅ | ✅ |
-| Own assets | flags and the tsw-coop logo as PNGs loaded at runtime (no pak) | ✅ | ✅ | ❌ | ✅ |
-| Main menu badge | "tsw-coop loaded" logo on the main menu | ✅ | ✅ | ❌ | ✅ |
+| Own assets | flags and the tsw-coop logo as PNGs loaded at runtime (no pak) | ✅ | ✅ | ✅ (`mod_assets`: logo and 250 flags are PNGs named as the scoreboard asks) | ✅ |
+| Main menu badge | "tsw-coop loaded" logo on the main menu | ✅ | ✅ | ✅ (screen preference test, logo PNG size) | ✅ |
 | In-game chat | F6 chat box, toasts, chat panel in the web view, through the relay | ✅ | ✅ | ✅ | 🟡 (bot chat in the log only) |
 | Host's train on guests | the host's consist drawn on guests as view actors following its snapshots | ✅ | ✅ | 🟡 | ✅ (replayed host) |
 | AI traffic on guests | the host's AI trains drawn on guests: the host sends every other vehicle's view class (`traffic` events, changes first, then the rest in turn), positions come with its snapshots (the 64 vehicles nearest the host); a guest draws view-actor ghosts within 3 km of its pawn, at most 150, and drops vehicles unseen for 15 s (`ghost/traffic.rs`) | ✅ | ✅ | 🟡 (entry and distance tests; spawning only in game) | ❌ |
@@ -68,7 +68,7 @@ git history).
 | Feature | Description | Started | Finished | Harness | In game |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | Guest drives the host's train | free seat = first come (F8), the host applies the guest's lever values, the host reclaims (BR 146) | ✅ | ✅ | ✅ | 🟡 (emulated guest) |
-| Guest cab view | the driving guest looks out of the ghost cab | ✅ | ✅ | ❌ | 🟡 (emulated host) |
+| Guest cab view | the driving guest looks out of the ghost cab | ✅ | ✅ | ✅ (stay/leave and car choice tests, rotator layout) | 🟡 (emulated host) |
 | Stop on a lost driver | the host's train stops when the driving guest leaves or is silent for 4 s | ✅ | ✅ | ✅ | ❌ |
 | Brake when the host leaves | the train the host leaves (out of the cab for 2 s, or into another train at once) gets power off and full train brake; a remote driver loses the seat with it (`drive/leave.rs`) | ✅ | ✅ | ✅ (decision tests incl. a 2 s grace for camera changes) | ❌ |
 | Other train classes | guests drive by role (`power`, `brake`, `reverser`); the host picks each role's lever per class (BR 146, Class 66, Doppelstock cab car, 8F steam, Class 323 combined handle, from the object dump) and sends its range; from the rear cab (the pawn's interaction environment, `VehicleSide`) its own `_B` levers | ✅ | ✅ | ✅ (lever choice per class and cab end, ranges, combined-handle stop) | ❌ |
