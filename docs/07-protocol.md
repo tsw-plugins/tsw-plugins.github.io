@@ -170,6 +170,8 @@ Events the mod uses today (the relay passes any name):
 | `driver` | host → room | `{"id": player\|null}`: who drives the host's train (every 5 s too) |
 | `controls` | driver → host | `{"power": 0.3, "brake": …, "reverser": …}`: levers moved |
 | `weather` | host → room | `{"scenario": class path}`: the host's weather scenario, on change and every 10 s; a guest switches to it (`OverrideScenario`) |
+| `junctions` | host → room | `{path: state}`: junction lever states (`GetJunctionState`), changes first, then the rest in turn, ≤ 40 per event, ≤ 1/s; a guest sets what differs (`TransitionToState`) |
+| `signals` | host → room | `{path: aspect class path}`: signal aspects, sent like `junctions`; a guest sets what differs (`SetSignalAspect`) |
 
 The host's clock needs no event: guests follow the snapshot `clock`
 (more than 30 s off: set to it).
