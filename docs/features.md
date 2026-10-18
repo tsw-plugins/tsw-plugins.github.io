@@ -27,7 +27,7 @@ git history).
 | Game lifecycle by code | `tswup`: launch the game and load a scenario, timetable or path without menus (`scripts/tswup`, `play.lua`); Free Roam cannot be started yet | ✅ | 🟡 | 🟡 | ✅ |
 | Drive status command | `tswcmd drive diag`: everything that matters for driving the current train, with a verdict (Lua) | ✅ | ✅ | ✅ | ✅ |
 | Drive "start" command | `tswcmd drive ready/go/stop`: any state to drivable / moving (Lua, `docs/research/driving-trains.md`) | ✅ | ✅ | ✅ | ✅ |
-| Drive spawn command | spawn a train and make it drivable in one command (Lua) | ✅ | ✅ | ❌ | ✅ |
+| Drive spawn command | spawn a train and make it drivable in one command (Lua, `spawn.lua`) | ✅ | ✅ | ✅ (`test_spawn`: blocked point skipped, board, ready, no clear track, refusal unless forced) | ✅ (before the move into `spawn.lua`; unchanged code) |
 | Lua lint/test workflow | `scripts/lint-lua`: luac, luacheck, offline tests with a fake UE4SS (build-box) | ✅ | ✅ | ✅ | ➖ |
 | Headless client emulator | `tsw-coop-emu`: scripted network peers and scenarios for manual and automated tests | ✅ | ✅ | ✅ | ✅ |
 | Fake player crowd | `crowd`/`walker` bots that walk, run, jump, crouch and sit around the host | ✅ | ✅ | ✅ | ✅ |
