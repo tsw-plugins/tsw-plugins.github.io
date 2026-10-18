@@ -85,7 +85,7 @@ git history).
 | Status query | `GET /status` on the game port: name, MOTD, players, names (public) | ✅ | ✅ | ✅ | ❌ |
 | Public / private | public = everything listed; private = nothing anywhere; password guards joining | ✅ | ✅ | ✅ | ❌ |
 | Master server | heartbeats, list, short codes, `/status` verification (`tsw-coop-master`) | ✅ | ✅ | ✅ | ❌ |
-| Master on the NAS | Docker container on the NAS behind the Cloudflare Tunnel / Tailscale | ❌ | ❌ | ❌ | ❌ |
+| Master on the NAS | `https://tsw-coop-master.minopia.de`: Docker image (`server/Dockerfile`) on the NAS, loopback port behind the Cloudflare Tunnel, real client address from the tunnel's `X-Forwarded-For` | ✅ | ✅ | ✅ (deployed; list, CORS, refusal and the forwarded address checked through the tunnel) | ❌ |
 | Server browser (Pages) | static site (`site/`): public session list, session page with details, invite, copy and join link; `?master=` for other masters | ✅ | ✅ | ✅ (local master, `headless_host`, crowd bots, browser) | ❌ |
 | Live map (Pages) | session code → page with the players and the host's train on a map, moving between the host's 5 s map posts (`POST /v1/map`, public sessions only) | ✅ | ✅ | ✅ (`announce` test, browser) | ❌ |
 | Local web view | live map, players, chat, host controls from the mod's web server (SSE) | ✅ | ✅ | 🟡 (mock in a browser) | 🟡 (dev endpoints yes, page no) |
@@ -94,7 +94,7 @@ git history).
 | Version compatibility | one protocol, mod version and game build per session; mismatches refused (`error{code:"version"}`) with both versions named, no retry | ✅ | ✅ | ✅ | ❌ |
 | Entitlement check | guests report route/loco DLC; the host refuses joins lacking the route or a spawned vehicle | ❌ | ❌ | ❌ | ❌ |
 | Mod/data sync | host → guest sync of mod version/config and data-only content | ❌ | ❌ | ❌ | ❌ |
-| tswcoop:// links | clicking a `tswcoop://join/` link opens the game and joins | ❌ | ❌ | ❌ | ❌ |
+| tswcoop:// links | clicking a `tswcoop://join/` link starts the game (Steam) if needed and joins, or switches a running game to that session; Windows: the mod registers `rundll32 dwmapi.dll,JoinLink`; Linux desktops: `scripts/tswcoop-link --install` | ✅ | ✅ | ✅ (Wine tests, real `rundll32` in Wine, script with a fake game folder) | ❌ |
 | Steam invites | Steam overlay invites / rich presence `connect` | ❌ | ❌ | ❌ | ❌ |
 | Discord invites | invites through Discord | ❌ | ❌ | ❌ | ❌ |
 | Spectators | HTTP-API-only clients join as map spectators | 🟡 (relay presence mode) | ❌ | 🟡 | ❌ |
