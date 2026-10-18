@@ -48,7 +48,7 @@ git history).
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | Player bodies | remote players as walking bodies: walk, run, jump, crouch, sit, removed when silent | ✅ | ✅ | ✅ | ✅ (bots) |
 | Real crouch animation | male hiker crouch (`CH_M_hiker1`), bench sit as fallback | ✅ | ✅ | ✅ (`mod_assets`: the crouch and every other asset path the mod loads exist in the installed game's paks) | ❌ |
-| Jump on Space | optional jump on Space instead of photo mode (photo mode to O); Lua only, Rust sends the jump state from vertical speed | ✅ | 🟡 | 🟡 | 🟡 |
+| Jump on Space | optional jump on Space instead of photo mode (photo mode to O); Lua `jump.lua` and Rust `jump.rs` (on by default, `tswcoop-no-jump` turns it off); the jump state goes to others from vertical speed | ✅ | ✅ | ✅ (Lua `test_jump`; Rust press edge and key-mapping layout per the header dump, every engine path in `mod_assets`) | 🟡 (Lua yes, Rust port not yet) |
 | Jump synced in MP | other players see a player jump | ✅ | ✅ | ✅ | ✅ (bots) |
 | Name tags | name, Dovetail Live level and country above each body, facing the camera, scaled with distance | ✅ | ✅ | ✅ | ✅ |
 | TAB scoreboard | names, ids, levels, flags, host/you; refused and banned joins section | ✅ | ✅ | ✅ | 🟡 (refused section not yet) |
