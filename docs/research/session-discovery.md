@@ -316,6 +316,16 @@ at once, first answer wins (as OpenOMSI does):
   hobby use only", with unpublished rate limits and no SLA. When on, the
   relay URL goes into the invite and enables punching and a relayed
   fallback.
+  **Built (2026-10-18):** `nat_relay = n0` (or any iroh relay's
+  `https://` URL) in `tswcoop.cfg`. The host's endpoint connects to the
+  relay at start (waits up to 5 s; without it the session works as
+  before and the log says so), the home relay's URL goes into the
+  invite's `relay` field, and a guest adds it to the host's addresses
+  when dialling QUIC: iroh connects through the relay when no direct
+  path answers and then tries to punch one. Tested with iroh's own test
+  relay on loopback (`tsw-coop-client/tests/quic.rs`: the invite's only
+  address is a closed port, the guest still joins over QUIC). Not yet
+  tried: across two real NATs, in the game.
 
 ### Invite: self-contained, works with no server
 

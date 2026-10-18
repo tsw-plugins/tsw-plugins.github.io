@@ -110,7 +110,7 @@ git history).
 | UPnP port mapping | the host's router forwards the port (TCP, and UDP with QUIC) | ✅ | ✅ | 🟡 | 🟡 (TCP yes, UDP no) |
 | PCP / NAT-PMP / IPv6 pinholes | other port-mapping protocols | ❌ | ❌ | ❌ | ❌ |
 | QUIC transport | iroh QUIC beside WebSocket, host key verified, dial race | ✅ | ✅ | ✅ | ❌ |
-| Hole punching | NAT traversal when neither side can be reached directly (master as rendezvous) | ❌ | ❌ | ❌ | ❌ |
+| Hole punching | NAT traversal when the host cannot be reached directly: host opt-in `nat_relay = n0` (or an own iroh relay); the relay goes into the invite, guests meet the host there and iroh punches a direct path (decided: relay as rendezvous, not the master) | ✅ | ✅ | ✅ (iroh test relay, guest with no reachable address) | ❌ |
 | Works without central services | private sessions need only the host and the invite | ✅ | ✅ | ✅ | ✅ |
 
 ## Anticheat
