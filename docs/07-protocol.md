@@ -162,6 +162,18 @@ Added 2026-10-17 as an additive v0 message (old relays reject it with
 Short-lived things that must not be lost to snapshot throttling: `horn`,
 `bell`, `coupled`, `uncoupled`, `derailed`, `cab_changed`.
 
+Events the mod uses today (the relay passes any name):
+
+| name | from → to | args |
+| --- | --- | --- |
+| `seat` | guest → host | `{"take": bool}`: ask for or give up the host's seat |
+| `driver` | host → room | `{"id": player\|null}`: who drives the host's train (every 5 s too) |
+| `controls` | driver → host | `{"power": 0.3, "brake": …, "reverser": …}`: levers moved |
+| `weather` | host → room | `{"scenario": class path}`: the host's weather scenario, on change and every 10 s; a guest switches to it (`OverrideScenario`) |
+
+The host's clock needs no event: guests follow the snapshot `clock`
+(more than 30 s off: set to it).
+
 ### `chat`
 
 ```json

@@ -59,7 +59,7 @@ git history).
 | Host's train on guests | the host's consist drawn on guests as view actors following its snapshots | ✅ | ✅ | 🟡 | ✅ (replayed host) |
 | AI traffic on guests | the host's AI trains drawn on guests | ✅ | 🟡 (on the web map only) | ❌ | ❌ |
 | Guest AI suppression | guests switch off their own AI, dispatcher, clock and weather | ❌ | ❌ | ❌ | ❌ |
-| Signals, switches, time, weather | host-authoritative and replicated to guests; time: a guest more than 30 s off the host's snapshot `clock` sets its world clock to it (`clock_sync.rs`, `SetDateTime`) | ✅ | 🟡 (time only) | 🟡 (clock decision tests) | ❌ |
+| Signals, switches, time, weather | host-authoritative and replicated to guests; time: a guest more than 30 s off the host's snapshot `clock` sets its world clock to it (`clock_sync.rs`, `SetDateTime`); weather: the host announces its weather scenario class (`weather` event), a guest switches to it (`weather.rs`, `OverrideScenario`) | ✅ | 🟡 (time and weather; signals and switches not yet) | 🟡 (clock and weather decision tests) | ❌ |
 | One session, any route | a guest on another route is told where the host is; the host refuses its driving | ✅ | ✅ | ✅ | ❌ |
 | Game build and timetable | the game's build number and the world's timetable in `hello` and rooms | ✅ | ✅ | ✅ | ❌ |
 
