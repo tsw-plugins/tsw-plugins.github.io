@@ -285,6 +285,26 @@ at once, first answer wins (as OpenOMSI does):
   datagrams, RTT median 0.15–0.28 ms, stream echo fine. Binding takes
   about 1 s under Proton (3 ms on Linux). Still open: growth of the DLL
   itself, inside the game process, across the internet.
+  **Built (2026-10-18), beside WebSocket, not instead of it:** the hosted
+  relay serves QUIC on the game port's UDP side (`tsw-coop-relay` feature
+  `iroh`, `src/quic.rs`), one bidirectional stream per player carrying
+  the protocol's messages length-prefixed (07-protocol "Transports"), into
+  the same per-connection pump as WebSocket. The host key file is now the
+  endpoint's secret key (`tswcoop-host-secret.key`; the old
+  `tswcoop-host.key` went into invites as it was, so it could not become
+  a secret) and the invite carries its public key, so a guest's QUIC
+  connection verifies the host. Guests race QUIC against the WebSocket
+  addresses and keep whichever connects first (`transport =
+  auto|websocket|quic`). With QUIC on, the router mapping covers the UDP
+  port too (a refused UDP mapping is only logged). Each QUIC link has its own one-worker tokio
+  runtime, so the client stays blocking. Datagrams for snapshots are not
+  used yet: `snap1` is a delta stream that needs a reliable link, and a
+  datagram variant needs keyframes. Tests: relay (QUIC and WebSocket
+  players in one session, kick notice before the stream ends), client (a
+  QUIC-only guest with a WebSocket guest; a wrong host key fails), and in
+  the Windows DLL under Wine (a guest joins over QUIC). The release DLL
+  is 14.5 MB with it (iroh without its own port mapper: ours maps UDP too).
+  Not tried yet: in the game, across the internet.
 - **No hole punching in v1.** iroh punches only over an already working
   path, normally a relay; without one, two NATed peers cannot meet. The
   NAS cannot be that relay (needs UDP and TCP 443 forwarded, Cloudflare

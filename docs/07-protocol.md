@@ -25,6 +25,27 @@ asks for them.
   stamps `t` (server receive time, ms since epoch) on fan-out.
 - Unknown fields are ignored; unknown `type` is rejected with `error`.
 
+## Transports
+
+The messages are the same on every transport; only their framing differs.
+
+- **WebSocket over TCP** (every relay): a text frame per JSON message, a
+  binary frame per `snap1` message.
+- **QUIC over iroh** (a hosted session; relay feature `iroh`): the host's
+  iroh endpoint listens on the game port's UDP side, ALPN `tsw-coop/0`, no
+  n0 discovery and no relay servers. The client opens one bidirectional
+  stream and sends `hello` on it; each message either way is
+  `kind:u8 len:u32 BE payload` (kind 0 JSON text, 1 `snap1` binary;
+  `tsw_coop_wire::frame`). The endpoint id is the host's public key, the
+  `host key` of the invite, so the connection itself proves the host is
+  the one that made the invite. A finished stream is the end of the
+  connection, as a WebSocket close is.
+
+A guest with an invite dials both at once, over every address of the
+invite, and keeps the first connection (`transport = auto`); `websocket`
+and `quic` restrict it. The host's own game always joins over loopback
+WebSocket.
+
 ## Client → relay
 
 ### `hello` (first message, exactly once)
