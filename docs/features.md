@@ -86,8 +86,8 @@ git history).
 | Public / private | public = everything listed; private = nothing anywhere; password guards joining | ✅ | ✅ | ✅ | ❌ |
 | Master server | heartbeats, list, short codes, `/status` verification (`tsw-coop-master`) | ✅ | ✅ | ✅ | ❌ |
 | Master on the NAS | Docker container on the NAS behind the Cloudflare Tunnel / Tailscale | ❌ | ❌ | ❌ | ❌ |
-| Server browser (Pages) | GitHub Pages: public server list, session details, join link | ❌ | ❌ | ❌ | ❌ |
-| Live map (Pages) | enter a session id on the Pages site, see the map and players | ❌ | ❌ | ❌ | ❌ |
+| Server browser (Pages) | static site (`site/`): public session list, session page with details, invite, copy and join link; `?master=` for other masters | ✅ | ✅ | ✅ (local master, `headless_host`, crowd bots, browser) | ❌ |
+| Live map (Pages) | session code → page with the players and the host's train on a map, moving between the host's 5 s map posts (`POST /v1/map`, public sessions only) | ✅ | ✅ | ✅ (`announce` test, browser) | ❌ |
 | Local web view | live map, players, chat, host controls from the mod's web server (SSE) | ✅ | ✅ | 🟡 (mock in a browser) | 🟡 (dev endpoints yes, page no) |
 | Kick and ban | at runtime from the web view, bans from the config, refused list | ✅ | ✅ | ✅ | 🟡 (config ban only) |
 | Server log | joins, leaves, timeouts, refusals (banned, password, full, mismatch), chat into the mod log | ✅ | ✅ | 🟡 | ✅ |

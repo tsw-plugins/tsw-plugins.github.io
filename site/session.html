@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tsw-coop session</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1><a href="index.html" id="back">tsw-coop sessions</a></h1>
+    <form class="code" id="codeForm" autocomplete="off">
+      <input id="codeInput" placeholder="Session code, e.g. K7Q-4ZM" maxlength="12" aria-label="Session code">
+      <button class="primary">Open</button>
+    </form>
+  </div>
+</header>
+<div class="wrap">
+  <div class="note" id="note"></div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h1 id="name" style="font-size:18px;margin:0">…</h1>
+        <div class="muted" id="motd"></div>
+        <h2>Join</h2>
+        <div class="muted" id="joinHelp">Paste the invite into <code>join =</code> in <code>tswcoop.cfg</code>,
+          or open the link with the mod installed.</div>
+        <div class="invite" id="invite"></div>
+        <div class="actions">
+          <a class="primary" id="joinLink" href="#"><button class="primary" type="button">Join</button></a>
+          <button type="button" id="copy">Copy invite</button>
+        </div>
+        <h2>Session</h2>
+        <div class="kv" id="details"></div>
+        <h2>Players</h2>
+        <ul class="plain" id="players"><li class="muted">…</li></ul>
+      </div>
+    </div>
+    <div class="card" id="mapBox">
+      <canvas id="map"></canvas>
+      <div id="mapNote">Live map: positions every 5 s</div>
+      <div id="scale"></div>
+    </div>
+  </div>
+</div>
+<script src="common.js"></script>
+<script src="livemap.js"></script>
+<script>
+"use strict";
+codeForm();
+const code = normaliseCode(new URLSearchParams(location.search).get("code"));
+document.getElementById("back").href = pageLink("index.html", {});
+const map = new LiveMap(document.getElementById("map"), document.getElementById("scale"));
+
+function show(s) {
+  const st = s.status;
+  document.getElementById("invite").textContent = s.invite;
+  document.getElementById("joinLink").href = s.invite;
+  if (!st) {
+    document.getElementById("name").textContent = `Private session ${s.code}`;
+    document.getElementById("motd").textContent = "The host keeps the details private.";
+    document.getElementById("details").innerHTML = `<span>Code</span><span>${esc(s.code)}</span>`;
+    document.getElementById("players").innerHTML = `<li class="muted">hidden</li>`;
+    document.getElementById("mapNote").textContent = "No live map for a private session.";
+    return;
+  }
+  document.title = `${st.name} · tsw-coop`;
+  document.getElementById("name").textContent = st.name || s.code;
+  document.getElementById("motd").textContent = st.motd || "";
+  const started = st.started_at ? new Date(st.started_at * 1000).toLocaleString() : "?";
+  const rows = [
+    ["Code", s.code],
+    ["Players", `${st.players}/${st.max_players}`],
+    ["Password", st.has_password ? "yes" : "no"],
+    ["Route", routeName(st.route)],
+    ["Timetable", st.timetable || "?"],
+    ["Game build", st.game_build || "?"],
+    ["Mod", st.mod_version],
+    ["Started", started],
+  ];
+  document.getElementById("details").innerHTML =
+    rows.map(([k, v]) => `<span>${esc(k)}</span><span>${esc(v)}</span>`).join("");
+  document.getElementById("players").innerHTML = (st.names || []).length
+    ? st.names.map((n, i) => `<li>${esc(n)}${i === 0 ? ' <span class="badge host">host</span>' : ""}</li>`).join("")
+    : `<li class="muted">nobody</li>`;
+  if (s.map) {
+    map.update(s.map);
+    document.getElementById("mapNote").textContent =
+      `Live map: ${s.map.players.length} player${s.map.players.length === 1 ? "" : "s"}, updated every 5 s`;
+  } else {
+    document.getElementById("mapNote").textContent = "Waiting for the host's first map update…";
+  }
+}
+
+async function refresh() {
+  const note = document.getElementById("note");
+  if (!code) {
+    note.textContent = "No session code in the address (session.html?code=K7Q-4ZM).";
+    return;
+  }
+  try {
+    show(await fromMaster(`/v1/sessions/${encodeURIComponent(code)}`));
+    note.textContent = "";
+  } catch (e) {
+    note.textContent = e.message === "no such session"
+      ? `No session ${code}: it ended, or the code is mistyped.`
+      : e.message;
+  }
+}
+
+document.getElementById("copy").addEventListener("click", async () => {
+  const text = document.getElementById("invite").textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    document.getElementById("copy").textContent = "Copied";
+  } catch (_) {
+    getSelection().selectAllChildren(document.getElementById("invite"));
+  }
+});
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

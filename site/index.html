@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tsw-coop sessions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1><a href="index.html">tsw-coop sessions</a></h1>
+    <form class="code" id="codeForm" autocomplete="off">
+      <input id="codeInput" placeholder="Session code, e.g. K7Q-4ZM" maxlength="12" aria-label="Session code">
+      <button class="primary">Open</button>
+    </form>
+  </div>
+</header>
+<div class="wrap">
+  <p class="muted">Public co-op sessions of Train Sim World 7 with the tsw-coop mod. Hosts choose
+    to list their session here; private sessions are joined with the invite the host sends you.</p>
+  <div class="note" id="note"></div>
+  <table>
+    <thead>
+      <tr><th>Session</th><th>Players</th><th>Route</th><th class="hide-narrow">Mod</th><th class="hide-narrow">Game</th><th></th></tr>
+    </thead>
+    <tbody id="list"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+  </table>
+  <p class="muted" id="updated"></p>
+  <footer>tsw-coop is an unofficial fan project, not affiliated with Dovetail Games.
+    <a href="https://github.com/Bluscream/tsw-coop">Source</a>.</footer>
+</div>
+<script src="common.js"></script>
+<script>
+"use strict";
+codeForm();
+
+function row(s) {
+  const st = s.status || {};
+  const lock = st.has_password ? ` <span class="badge" title="needs a password">password</span>` : "";
+  const full = st.players >= st.max_players ? ` <span class="badge">full</span>` : "";
+  return `<tr data-code="${esc(s.code)}">
+    <td class="name">${esc(st.name || s.code)}${lock}${full}<span class="motd">${esc(st.motd)}</span></td>
+    <td>${esc(st.players)}/${esc(st.max_players)}</td>
+    <td>${esc(routeName(st.route))}</td>
+    <td class="hide-narrow">${esc(st.mod_version)}</td>
+    <td class="hide-narrow">${st.game_build ? esc(st.game_build) : "?"}</td>
+    <td><span class="badge">${esc(s.code)}</span></td>
+  </tr>`;
+}
+
+async function refresh() {
+  const note = document.getElementById("note");
+  const list = document.getElementById("list");
+  try {
+    const { sessions } = await fromMaster("/v1/sessions");
+    note.textContent = "";
+    list.innerHTML = sessions.length
+      ? sessions.map(row).join("")
+      : `<tr><td colspan="6" class="muted">No public sessions right now.</td></tr>`;
+    document.getElementById("updated").textContent =
+      `${sessions.length} session${sessions.length === 1 ? "" : "s"} · updated ${new Date().toLocaleTimeString()}`;
+  } catch (e) {
+    note.textContent = e.message;
+    if (list.querySelector(".muted")) list.innerHTML = "";
+  }
+}
+
+document.getElementById("list").addEventListener("click", (e) => {
+  const tr = e.target.closest("tr[data-code]");
+  if (tr) location.href = pageLink("session.html", { code: tr.dataset.code });
+});
+refresh();
+setInterval(refresh, 15000);
+</script>
+</body>
+</html>
