@@ -1,3 +1,12 @@
+---
+name: mod-sync
+description: >-
+  How a host brings its guests the coop mod's version and config and data-only content: the version check at join, the transport, what the game has for liveries, and the plan.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-18T09:57+0200
+last_edited: 2026-10-18T10:28+0200
+---
+
 # Mod and data sync (2026-10-18)
 
 docs/08-concept.md "Mod sync": the host brings its guests the coop mod's version and config and

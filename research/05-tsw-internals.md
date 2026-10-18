@@ -1,3 +1,12 @@
+---
+name: tsw-internals
+description: >-
+  Chronological findings from the TSW 7 build 886 dump and early Lua experiments: far coordinates, ribbon locations, the spawner, dispatcher occupancy, DLC checks, ghosts and driving. Newer findings live in the topic files of research/.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-17T06:05+0200
+last_edited: 2026-10-17T11:59+0200
+---
+
 # 05 — TSW internals (from the TSW 7 build 886 dump)
 
 Everything here was read from `dumps/tsw7-886/` (UHT headers of the
@@ -504,8 +513,8 @@ unloads; Ctrl+R pauses briefly because of it.
 
 ## 10l. Cold and dark to moving, in code (2026-10-17, Training Centre "Wagen für Wagen")
 
-> Superseded by [`research/driving-trains.md`](research/driving-trains.md) (status `drive diag`,
-> convergent `drive ready`) and [`research/ue4ss-lua-pitfalls.md`](research/ue4ss-lua-pitfalls.md).
+> Superseded by [`research/driving-trains.md`](driving-trains.md) (status `drive diag`,
+> convergent `drive ready`) and [`research/ue4ss-lua-pitfalls.md`](ue4ss-lua-pitfalls.md).
 
 Tooling: `mod-lua/TswCoopDebug/Scripts/drive.lua`, driven by `tswcmd drive …`
 (`drive go [filter] [power]` boards, starts up and applies power in one go).

@@ -1,3 +1,13 @@
+---
+name: tsw-coop-concept
+description: >-
+  The maintainer's scope decisions for tsw-coop: a host-owned world, walking guests, driver handover, relay transport, sessions, mod sync, entitlements and two-way anticheat, with the revised milestones.
+game_build: 886 (TSW 7, Steam build 25890949)
+status: accepted
+created: 2026-10-17T07:06+0200
+last_edited: 2026-10-18T10:22+0200
+---
+
 # 08 — Concept and scope decisions (2026-10-17)
 
 Answers given by the maintainer on 2026-10-17. These override the more

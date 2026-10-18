@@ -1,3 +1,12 @@
+---
+name: prior-art
+description: >-
+  Existing Train Sim World mods and tools from public sources: engine facts, the TSW-specific UE4SS fork, DTG's official HTTP API, ThirdRails and other prior work.
+game_build: not verified in game (public sources, mostly TSW 5)
+created: 2026-10-17T03:20+0000
+last_edited: 2026-10-17T03:23+0000
+---
+
 # 02 — Prior art on Train Sim World
 
 Everything here is from public sources read on 2026-10-17. "Observed on

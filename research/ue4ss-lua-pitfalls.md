@@ -1,3 +1,12 @@
+---
+name: ue4ss-lua-pitfalls
+description: >-
+  UE4SS Lua rules that crash the game when broken: the async thread, NULL object wrappers, timers.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-17T11:59+0200
+last_edited: 2026-10-17T11:59+0200
+---
+
 # UE4SS Lua pitfalls that crash TSW 7
 
 Installed: UE4SS build in `…/Binaries/Win64/ue4ss/` (reports zDEV v3.0.1, but has the newer

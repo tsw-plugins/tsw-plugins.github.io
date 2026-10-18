@@ -1,3 +1,12 @@
+---
+name: developer-functions
+description: >-
+  Whether the game has a built-in way to ready an existing train: spawn presets, AI service setup, cheats and simple controls, searched in the reflection dumps and partly tested.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-17T11:59+0200
+last_edited: 2026-10-17T11:59+0200
+---
+
 # Is there a built-in "get the train ready"? (2026-10-17)
 
 Short answer: **not for a train that already exists.** The game readies trains only when it spawns

@@ -1,3 +1,12 @@
+---
+name: source-comparison
+description: >-
+  UE4SS and UEVR compared as the base for a Train Sim World loader: licences, supported engine versions, build requirements, injection, and which of the two can be built and shipped.
+game_build: n/a (compares the two projects' source trees, not the game)
+created: 2026-10-17T03:20+0000
+last_edited: 2026-10-17T03:20+0000
+---
+
 # 01 — Source comparison: UE4SS vs UEVR as the loader base
 
 Both projects were cloned and inspected on 2026-10-17:

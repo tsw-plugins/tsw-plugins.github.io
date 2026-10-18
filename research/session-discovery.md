@@ -1,3 +1,12 @@
+---
+name: session-discovery
+description: >-
+  Hosted sessions: invite and short codes, the public listing and master, querying hosts, the session browser, NAT and port mapping, how other games do it, and the design after the maintainer's decisions.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-17T22:38+0200
+last_edited: 2026-10-18T10:13+0200
+---
+
 # Sessions: codes, public listing, query, server browser, connectivity (2026-10-17)
 
 **Status 2026-10-18:** built, tested without the game (unit and loopback

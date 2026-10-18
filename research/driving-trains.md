@@ -1,3 +1,12 @@
+---
+name: driving-trains
+description: >-
+  Getting a train from any state to moving in code: what blocks it, the drive toolkit (spawn, board, diag, ready, power) and per-class recipes.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-17T11:59+0200
+last_edited: 2026-10-17T13:00+0200
+---
+
 # Driving trains from code (2026-10-17, Training Centre, BR 146 and Class 323)
 
 ## Commands

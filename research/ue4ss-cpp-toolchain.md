@@ -1,3 +1,12 @@
+---
+name: ue4ss-cpp-toolchain
+description: >-
+  Historical: how a UE4SS CppUserModBase mod (C++ shim plus Rust core) was built on Linux without MSVC. The shim was removed on 2026-10-18; the game DLL is now pure Rust.
+game_build: n/a (toolchain only; nothing touched the game)
+created: 2026-10-17T07:19+0200
+last_edited: 2026-10-18T11:47+0200
+---
+
 # Building a UE4SS C++ mod (shim + Rust core) on Linux
 
 **Historical.** The C++ shim (`mod/shim`), the probe (`toolchain/probe`) and

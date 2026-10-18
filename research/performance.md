@@ -1,3 +1,12 @@
+---
+name: performance
+description: >-
+  Slow motion with 662 vehicles: the TswCoop telemetry and the UE4SS GUI console measured; capture cut from about 95 ms to 5.5 ms and re-enabled, the GUI console stays off.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-17T13:59+0200
+last_edited: 2026-10-17T19:38+0200
+---
+
 # Game slowdown from our mods and the UE4SS console (2026-10-17)
 
 ## Symptom

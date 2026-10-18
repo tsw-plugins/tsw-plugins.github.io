@@ -1,3 +1,12 @@
+---
+name: game-state-journal
+description: >-
+  The game state journal and crash reports added after two unexplained events in one test, and skipping the start-up intro.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-17T20:38+0200
+last_edited: 2026-10-17T21:27+0200
+---
+
 # Game state journal, crash reports and the start-up skip (2026-10-17)
 
 ## Why: two unexplained events in one test

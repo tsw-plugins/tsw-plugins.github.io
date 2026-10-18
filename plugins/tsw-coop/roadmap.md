@@ -1,6 +1,14 @@
+---
+name: tsw-coop-roadmap
+description: >-
+  tsw-coop milestones M0 onwards, the open questions and what needs a real game install. Superseded in part by the tsw-coop concept.
+created: 2026-10-17T03:20+0000
+last_edited: 2026-10-17T07:06+0200
+---
+
 # 04 — Roadmap and open questions
 
-> Superseded in part by [08-concept.md](08-concept.md) (2026-10-17): the
+> Superseded in part by [08-concept.md](../../design/tsw-coop-concept.md) (2026-10-17): the
 > session model is host → clients, and the milestones are revised there.
 
 ## Milestones

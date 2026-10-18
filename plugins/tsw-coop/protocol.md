@@ -1,3 +1,12 @@
+---
+name: tsw-coop-protocol
+description: >-
+  tsw-coop relay wire protocol v0, as implemented: JSON over WebSocket (hello, consist, snapshot, event, chat), binary snap1 snapshots, far-space positions, joining a hosted session, limits.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-17T06:34+0200
+last_edited: 2026-10-18T08:45+0200
+---
+
 # 07 — Relay protocol v0
 
 Wire format for the relay server and all clients (the in-game mod, the

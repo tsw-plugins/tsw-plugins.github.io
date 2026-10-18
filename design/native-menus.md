@@ -1,3 +1,13 @@
+---
+name: native-menus
+description: >-
+  Replacing the key-driven text overlays with real, mouse-driven entries in the game's own menus, plus a plugin indicator on every menu screen, without any cooked asset. Research from header dumps, object dumps and the cooked menu assets.
+game_build: 886 (TSW 7, Steam build 25890949)
+status: proposal
+created: 2026-10-18T11:47+0200
+last_edited: 2026-10-18T11:47+0200
+---
+
 # Native, mouse-driven menus (2026-10-18)
 
 Goal: replace the key-driven text overlays (`menu.rs` F9 menu, `chat_box.rs`, `scoreboard/`) with

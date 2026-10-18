@@ -1,3 +1,12 @@
+---
+name: avatars
+description: >-
+  Bodies for other players: spawning a plain Character, dressing it from the game's modular character meshes, the animation assets in the paks, and the plan for the Rust DLL.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-17T21:03+0200
+last_edited: 2026-10-18T04:07+0200
+---
+
 # Guest avatars: bodies for other players (2026-10-17)
 
 Follows 05 §10g (a second driver pawn re-hides itself; a plain `ACharacter`

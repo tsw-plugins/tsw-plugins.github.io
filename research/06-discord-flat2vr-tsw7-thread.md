@@ -1,3 +1,12 @@
+---
+name: discord-flat2vr-tsw7-thread
+description: >-
+  Community findings from the Flat2VR Modding "train sim world 7" Discord thread: UEVR on TSW 7, DX12, console variable injection and a Proton injection crash.
+game_build: not verified in game (community anecdote, read 2026-10-17)
+created: 2026-10-17T06:15+0200
+last_edited: 2026-10-17T06:15+0200
+---
+
 # 06 — Discord thread: "train sim world 7" (Flat2VR Modding)
 
 | | |

@@ -1,3 +1,12 @@
+---
+name: tsw-coop-features
+description: >-
+  Every tsw-coop feature asked for or decided on, with its state: started, finished, tested in the harness, verified in game.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-18T05:39+0200
+last_edited: 2026-10-18T11:30+0200
+---
+
 # Features: everything asked for or brainstormed, and where each stands
 
 Every feature the maintainer asked for or that we decided on together

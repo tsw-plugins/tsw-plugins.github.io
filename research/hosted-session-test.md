@@ -1,3 +1,12 @@
+---
+name: hosted-session-test
+description: >-
+  First in-game hosted session with seven bots: what works (GeoIP flags, name tags, TAB scoreboard, menu badge, server log), four bugs found and fixed, the GC rule for cached objects.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-18T03:32+0200
+last_edited: 2026-10-18T11:30+0200
+---
+
 # Hosted session with a crowd, in game (2026-10-18)
 
 First runs of a session hosted inside the game (`host = 7441`) with seven

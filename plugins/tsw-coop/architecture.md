@@ -1,3 +1,11 @@
+---
+name: tsw-coop-architecture
+description: >-
+  The original layered design of tsw-coop: goals and non-goals, loader, state capture, netcode, ghost trains and signalling. Partly superseded by the tsw-coop concept.
+created: 2026-10-17T03:20+0000
+last_edited: 2026-10-17T10:52+0200
+---
+
 # 03 — Architecture
 
 ## Goals and non-goals

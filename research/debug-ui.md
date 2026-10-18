@@ -1,3 +1,12 @@
+---
+name: debug-ui
+description: >-
+  Options for an in-game debug UI: the game's HUD notifications, a runtime UMG menu from Lua, a tab in the UE4SS ImGui window, cooked widget paks.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-17T12:57+0200
+last_edited: 2026-10-18T02:17+0200
+---
+
 # An in-game UI for the debug menu (2026-10-17)
 
 Question: does our mod or UE4SS give us a way to show a debug menu in the game, or can we reuse the

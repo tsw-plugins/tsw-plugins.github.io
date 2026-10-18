@@ -1,3 +1,11 @@
+---
+name: tsw-coop-protocol-v1-draft
+description: >-
+  Draft of tsw-coop protocol v1 for maintainer review: what v0 lacks for the host-owned concept and the proposed messages. Not implemented, not agreed.
+created: 2026-10-17T11:59+0200
+last_edited: 2026-10-17T21:06+0200
+---
+
 # 09 — Protocol v1 (DRAFT for maintainer review)
 
 > **Status: draft, not implemented, not agreed.** Written 2026-10-17 alongside

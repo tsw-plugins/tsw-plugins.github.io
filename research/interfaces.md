@@ -1,3 +1,12 @@
+---
+name: interfaces
+description: >-
+  Every interface into the running game (UE4SS Lua, hooks, DTG HTTP API, VirtualRailDriver, virtual pad), tested side by side on a BR 146, with recommendations for tests and co-op.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-17T12:22+0200
+last_edited: 2026-10-18T09:50+0200
+---
+
 # Interfaces into a running TSW 7: what each can do (2026-10-17)
 
 Until now we drove trains through one path: Lua calls on the cab controls (`drive_ctl`). This note

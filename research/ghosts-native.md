@@ -1,3 +1,12 @@
+---
+name: ghosts-native
+description: >-
+  Showing the host's trains on a guest from the Rust DLL: what the host sends, the spawning options the game offers, and the view-actor ghosts that were built.
+game_build: 886 (TSW 7, Steam build 25890949)
+created: 2026-10-17T20:07+0200
+last_edited: 2026-10-17T21:04+0200
+---
+
 # Ghost trains from the Rust DLL (M4 groundwork, 2026-10-17)
 
 What the guest side of `mod/native` needs to show the host's trains, and what
