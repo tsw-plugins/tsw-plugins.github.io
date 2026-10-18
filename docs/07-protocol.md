@@ -77,6 +77,8 @@ WebSocket.
   exists ([Binary snapshots](#binary-snapshots-snap1)).
 - `auth` (optional) is the join proof for a player-hosted session
   ([Joining a hosted session](#joining-a-hosted-session)).
+- `packs` (optional) lists the client's installed DLC packs, for the
+  host's entitlement check (same section).
 - `room.route` is the route's content id (`URouteDefinition` name once
   known; the map package name until then). `timetable` is the timetable or
   scenario id, or `freeroam`.
@@ -212,8 +214,17 @@ One mod version and one game build per session (docs/08): after the proof,
 a guest whose mod version (after the client name: `tsw-coop-native/0.1.0`
 is `0.1.0`) differs from the session's, or whose game build differs from
 the host's (once the host is in; 0 = unknown, not compared), gets
-`error{code:"version", fatal:true}` naming both versions. Its client does
-not retry.
+`error{code:"version", fatal:true}` naming both versions and where to
+download the session's (`https://github.com/Bluscream/tsw-coop/releases`).
+Its client does not retry.
+
+DLC (docs/08 "Entitlements", an honest-client check): `hello.packs` lists
+the DLC packs the client has installed (`Content/DLC/…-<Pack>.pak`; the
+pack's content roots come from its pak index, `tsw-coop-client::content`).
+The host tells its relay which packs its route and its spawned trains need
+(those that are DLC on the host; base-game content needs nothing), and a
+guest lacking one gets `error{code:"entitlement", fatal:true}` naming the
+packs and what needs them. Its client does not retry.
 
 **What the relay logs** (the host: `server:` lines in
 `tswcoop-native.log`; standalone: stderr), with connection, address,
@@ -310,7 +321,7 @@ The first snapshot on a stream is a keyframe of about 2.3–2.6 KB.
 ### `error`
 
 ```json
-{"type":"error","code":"proto|room|rate|schema|auth|version","message":"…","fatal":true}
+{"type":"error","code":"proto|room|rate|schema|auth|version|entitlement","message":"…","fatal":true}
 ```
 
 `fatal:true` means the relay closes the connection after sending it.

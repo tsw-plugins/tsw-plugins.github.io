@@ -92,8 +92,8 @@ git history).
 | Kick and ban | at runtime from the web view, bans from the config, refused list | ✅ | ✅ | ✅ | 🟡 (config ban only) |
 | Server log | joins, leaves, timeouts, refusals (banned, password, full, mismatch), chat into the mod log | ✅ | ✅ | 🟡 | ✅ |
 | Version compatibility | one protocol, mod version and game build per session; mismatches refused (`error{code:"version"}`) with both versions named, no retry | ✅ | ✅ | ✅ | ❌ |
-| Entitlement check | guests report route/loco DLC; the host refuses joins lacking the route or a spawned vehicle | ❌ | ❌ | ❌ | ❌ |
-| Mod/data sync | host → guest sync of mod version/config and data-only content | ❌ | ❌ | ❌ | ❌ |
+| Entitlement check | guests report their installed DLC packs (pak indices, cached); the host refuses joins lacking the pack of its route or of a car of its train (`error{code:"entitlement"}`); not yet: Steam licence check (`BIsDlcInstalled`), AI trains, guests already in when the host changes train | ✅ | 🟡 | ✅ (pak reader on this machine's DLC, relay and client tests) | ❌ |
+| Mod/data sync | host → guest sync of mod version/config and data-only content; so far a version refusal names the download page | 🟡 | ❌ | ❌ | ❌ |
 | tswcoop:// links | clicking a `tswcoop://join/` link starts the game (Steam) if needed and joins, or switches a running game to that session; Windows: the mod registers `rundll32 dwmapi.dll,JoinLink`; Linux desktops: `scripts/tswcoop-link --install` | ✅ | ✅ | ✅ (Wine tests, real `rundll32` in Wine, script with a fake game folder) | ❌ |
 | Steam invites | Steam overlay invites / rich presence `connect` | ❌ | ❌ | ❌ | ❌ |
 | Discord invites | invites through Discord | ❌ | ❌ | ❌ | ❌ |
