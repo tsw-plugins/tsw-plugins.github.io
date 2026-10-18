@@ -100,7 +100,7 @@ git history).
 | Spectators | HTTP-API-only clients join as map spectators | 🟡 (relay presence mode) | ❌ | 🟡 | ❌ |
 | Reconnect | lost connections retried with backoff, state restored | ✅ | ✅ | ✅ | ❌ |
 | Up to 8 players | session limit 8 | ✅ | ✅ | ✅ | ✅ |
-| Installer | install the mod into the game | ❌ | ❌ | ❌ | ❌ |
+| Installer | install the mod into the game: `install.bat` (Windows, `rundll32 dwmapi.dll,Install`: finds the game via Steam's libraries, keeps UE4SS's dwmapi.dll, starter `tswcoop.cfg`, registers links) and `scripts/install-tswcoop` (Linux/Proton, also `--uninstall`, `--check`, checks the launch options) | ✅ | ✅ | ✅ | ❌ |
 
 ## Network and traffic
 
