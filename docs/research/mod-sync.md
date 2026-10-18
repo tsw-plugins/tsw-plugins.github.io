@@ -31,6 +31,23 @@ traffic.
   view actor).
 - No user livery exists on this machine yet (`Saved/UserContent` is empty), so where
   `SaveReskin` writes and in what format is unknown.
+- Where they are saved (exe strings and `DTGReskin.hpp`): the save slot `UGCLiveries`
+  (`UGCLiveries_%d` per user index), i.e. `SaveGames/<user>/UGCLiveries.sav`, a
+  `UDTGUserGeneratedContentSave` with `Reskins` (`FReskinSave`: ID, date, names, base
+  definition, elements) and `CompressedReskins` (`FCompressedReskin`: `FName ID`,
+  `TArray<uint8>`). The live collection keeps that save object as `UGCSaves` (0xD8), so the
+  host reads a livery's compressed bytes from memory by its `ReskinID`; no save-file parsing.
+  `FindReskin(FName)` gives the `UDTGReskin` itself.
+
+## Built (2026-10-18, not yet run in game)
+
+`mod/native/src/livery.rs`, `sys/ugc.rs`: hosting, each car's `livery` that is in
+`UGCSaves->CompressedReskins` goes to the guests as a `blob` of kind `livery` (once per
+livery, again when more guests are in, four parts a second); a guest stores it as
+`tswcoop-liveries/<id>.reskin` next to the config. Tested: reading the array from a fake
+object in the game's layout, offering and pacing, storing on the guest. Not yet: applying a
+stored livery on the guest (add it to the guest's `UGCSaves` and `ReloadReskins`, or build a
+`UDTGReskin` from it), then giving the ghost car that `ReskinID`.
 
 ## Plan
 
