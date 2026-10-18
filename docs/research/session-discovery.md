@@ -462,6 +462,29 @@ link. Open for the in-game test: whether the game pumps
 `SteamAPI_RunCallbacks` (so registered callbacks fire; the start path does
 not depend on it), and how Steam shows the button for the friend.
 
+### Discord "Ask to Join" (2026-10-18)
+
+`mod/native/src/discord.rs`, on with the setting `discord_app` (a Discord
+application id; none exists for the project yet). The mod speaks Discord's
+local RPC over `\\.\pipe\discord-ipc-0..9` (frames: `u32` opcode, `u32`
+length, JSON; handshake `{"v":1,"client_id":…}`), the same protocol the
+Game SDK uses, so no Discord library ships with the mod:
+
+- `SET_ACTIVITY` for our process: "Hosting a co-op session" / "In a co-op
+  session", "N of 8 players", a party (id from the host key, so everyone in
+  the session shares it) and, as `secrets.join`, the invite without its
+  scheme. Discord caps join secrets at 128 characters; later addresses are
+  left out until it fits (the first, preferred one always stays).
+- `SUBSCRIBE ACTIVITY_JOIN`: when a friend's request is accepted, Discord
+  hands the friend's game the secret; it becomes a join request like a
+  clicked link.
+
+Unit-tested: framing, the activity and dispatch JSON, fitting the secret,
+and the whole exchange against a fake Discord on a real named pipe under
+Wine. Open: an application id, and the in-game test with two Discord
+accounts (whether Discord still offers "Ask to Join" to an unverified
+application).
+
 ## Open questions for the maintainer
 
 - ~~Pages address~~: a `tsw-coop` GitHub organisation (`tsw-coop.github.io`),
