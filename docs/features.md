@@ -88,7 +88,7 @@ git history).
 | Master on the NAS | `https://tsw-coop-master.minopia.de`: Docker image (`server/Dockerfile`) on the NAS, loopback port behind the Cloudflare Tunnel, real client address from the tunnel's `X-Forwarded-For` | ✅ | ✅ | ✅ (deployed; list, CORS, refusal and the forwarded address checked through the tunnel) | ❌ |
 | Server browser (Pages) | static site (`site/`): public session list, session page with details, invite, copy and join link; `?master=` for other masters | ✅ | ✅ | ✅ (local master, `headless_host`, crowd bots, browser) | ❌ |
 | Live map (Pages) | session code → page with the players and the host's train on a map, moving between the host's 5 s map posts (`POST /v1/map`, public sessions only) | ✅ | ✅ | ✅ (`announce` test, browser) | ❌ |
-| Local web view | live map, players, chat, host controls from the mod's web server (SSE) | ✅ | ✅ | 🟡 (mock in a browser) | 🟡 (dev endpoints yes, page no) |
+| Local web view | live map, players, chat, host controls from the mod's web server (SSE) | ✅ | ✅ | ✅ (`web::http_tests` over loopback HTTP in Wine: page, state, event stream, invite, chat, dev endpoints and their caller checks; page against a mock in a browser) | 🟡 (dev endpoints yes, page no) |
 | Kick and ban | at runtime from the web view, bans from the config, refused list | ✅ | ✅ | ✅ | 🟡 (config ban only) |
 | Server log | joins, leaves, timeouts, refusals (banned, password, full, mismatch), chat into the mod log | ✅ | ✅ | ✅ (filter and one line per event through a capturing subscriber) | ✅ |
 | Version compatibility | one protocol, mod version and game build per session; mismatches refused (`error{code:"version"}`) with both versions named, no retry | ✅ | ✅ | ✅ | ❌ |
