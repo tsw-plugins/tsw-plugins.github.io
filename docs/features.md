@@ -32,7 +32,7 @@ git history).
 | Headless client emulator | `tsw-coop-emu`: scripted network peers and scenarios for manual and automated tests | ✅ | ✅ | ✅ | ✅ |
 | Fake player crowd | `crowd`/`walker` bots that walk, run, jump, crouch and sit around the host | ✅ | ✅ | ✅ | ✅ |
 | Toast notifications | game notifications for the mod (Lua and Rust `toast.rs`) | ✅ | ✅ | ✅ (Lua `test_toast` against a fake dispatcher; the Rust port's icon paths in `mod_assets`) | ✅ |
-| Runtime text menu | debug menu built at runtime (F9, Lua only; Rust has the UMG helpers but no menu) | ✅ | 🟡 | ✅ | ✅ |
+| Runtime text menu | menu built at runtime on F9: Lua debug menu of bridge commands (`menu.lua`), and the native mod's own (`menu.rs`: live map in the browser, jump on Space, start-up skip, frame counter) | ✅ | ✅ | ✅ (Lua `test_menu`; Rust rows, highlight wrap, flag file toggles, every engine path in `mod_assets`) | 🟡 (Lua yes, Rust menu not yet) |
 | Spawned train simulation | research: how spawned trains get their simulation (boarding turns it on) | ✅ | ✅ | ➖ | ✅ |
 | AI takeover probes | research: take over and hand back AI trains (`docs/research/interfaces.md`) | ✅ | ✅ | ➖ | ✅ |
 | Performance on Linux | research and fixes for slow motion with many vehicles (`docs/research/performance.md`) | ✅ | ✅ | ➖ | ✅ |
