@@ -426,6 +426,42 @@ the invite preview ("3/8 players, password") query hosts directly.
   gone, everything else (invites, joining, playing, query from the game)
   works.
 
+### Spectators (built 2026-10-18)
+
+The host's game port serves `GET /spectate`, a page with the same map
+code as the site (`site/livemap.js`, copied into the relay crate and kept
+equal by a test), fed every 2 s by `GET /map` and `/status` on the same
+port. A plain-`http://` page served by the host itself avoids the
+https→http block above, and a private session's spectators need the
+invite's secret, as for `/status`. The links (one per invite address) go
+to `tswcoop-spectate.txt` and `/api/invite`.
+
+### Steam "Join game" (built 2026-10-18)
+
+The game ships Steamworks SDK 1.52 (`Engine/Binaries/ThirdParty/Steamworks/
+Steamv152/Win64/steam_api64.dll`), whose flat API exports
+`SteamAPI_SteamFriends_v017`, `SteamAPI_ISteamFriends_SetRichPresence`,
+`SteamAPI_SteamApps_v008`, `SteamAPI_ISteamApps_GetLaunchCommandLine` and
+`SteamAPI_RegisterCallback`. The mod looks them up in the already loaded
+DLL (it never loads Steam itself) and:
+
+- sets rich presence `connect` to the session's invite (hosting or
+  joined; `steam_join = off` turns it off; an empty value removes only that
+  key, never the game's own presence), so Steam friends see "Join game";
+- at start, looks for a `tswcoop://join/` on the command line and in
+  `GetLaunchCommandLine` (Steam starts a friend's game with the `connect`
+  value there);
+- while running, registers a hand-built `CCallbackBase` for
+  `GameRichPresenceJoinRequested_t` (id 337: a `CSteamID`, then 256 bytes
+  of connect string). MSVC orders the two `Run` overloads in reverse, so
+  both vtable slots point to the same function, which only reads the data
+  argument.
+
+Either path leaves the invite as a join request, the same as a clicked
+link. Open for the in-game test: whether the game pumps
+`SteamAPI_RunCallbacks` (so registered callbacks fire; the start path does
+not depend on it), and how Steam shows the button for the friend.
+
 ## Open questions for the maintainer
 
 - ~~Pages address~~: a `tsw-coop` GitHub organisation (`tsw-coop.github.io`),
