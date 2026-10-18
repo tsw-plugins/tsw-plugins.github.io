@@ -139,7 +139,11 @@ To be replaced by dev endpoints on the host's planned HTTP server.
   0 it brakes (−100 % on the HUD) whatever the throttle; that is the
   train's own simulation, the same for a local driver.
 - Other trains: the per-class table above is built (2026-10-18) but only
-  the BR 146 was driven in game; the rear cab (`_B`) is not chosen yet.
+  the BR 146 was driven in game. The rear cab is told by the driver pawn's
+  `GetInteractionEnvironment()` name, matched to the train's
+  `UInteractionEnvironmentComponent` of that name and its `VehicleSide`
+  (`ESide::Back` = 1); then the `_B`/`B_` levers come first
+  (`drive/cab_side.rs`), untested in game.
 - The host leaving its train (2 s out of the cab, or into another train)
   now stops it (`drive/leave.rs`), untested in game.
 - A real second game as host is still untested (only the emulator).
