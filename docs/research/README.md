@@ -11,6 +11,7 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [performance.md](performance.md) | Slow motion with 662 vehicles: `TswCoop` telemetry and the UE4SS GUI console, measured; capture cut from ~95 ms to ~5.5 ms and re-enabled, GUI console stays off |
 | [interfaces.md](interfaces.md) | Every interface into the running game (Lua, hooks, DTG HTTP API, VirtualRailDriver, virtual pad), tested side by side; recommendations for tests and co-op |
 | [ue4ss-lua-pitfalls.md](ue4ss-lua-pitfalls.md) | UE4SS Lua rules that crash the game when broken: threads, NULL object wrappers, timers |
+| [hosted-session-test.md](hosted-session-test.md) | First in-game hosted session with 7 bots: what works (GeoIP flags, name tags, TAB scoreboard, menu badge, server log), four bugs found and fixed, the GC rule for cached objects |
 | [developer-functions.md](developer-functions.md) | Is there a built-in "make train ready"? Presets, AI service setup, cheats, simple controls |
 
 Tooling referenced throughout:
