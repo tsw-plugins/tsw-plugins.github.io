@@ -31,12 +31,12 @@ git history).
 | Lua lint/test workflow | `scripts/lint-lua`: luac, luacheck, offline tests with a fake UE4SS (build-box) | ✅ | ✅ | ✅ | ➖ |
 | Headless client emulator | `tsw-coop-emu`: scripted network peers and scenarios for manual and automated tests | ✅ | ✅ | ✅ | ✅ |
 | Fake player crowd | `crowd`/`walker` bots that walk, run, jump, crouch and sit around the host | ✅ | ✅ | ✅ | ✅ |
-| Toast notifications | game notifications for the mod (Lua and Rust `toast.rs`) | ✅ | ✅ | 🟡 | ✅ |
+| Toast notifications | game notifications for the mod (Lua and Rust `toast.rs`) | ✅ | ✅ | ✅ (Lua `test_toast` against a fake dispatcher; the Rust port's icon paths in `mod_assets`) | ✅ |
 | Runtime text menu | debug menu built at runtime (F9, Lua only; Rust has the UMG helpers but no menu) | ✅ | 🟡 | ✅ | ✅ |
 | Spawned train simulation | research: how spawned trains get their simulation (boarding turns it on) | ✅ | ✅ | ➖ | ✅ |
 | AI takeover probes | research: take over and hand back AI trains (`docs/research/interfaces.md`) | ✅ | ✅ | ➖ | ✅ |
 | Performance on Linux | research and fixes for slow motion with many vehicles (`docs/research/performance.md`) | ✅ | ✅ | ➖ | ✅ |
-| Cheap telemetry in Rust | host capture of train, consists, clock in the Rust DLL, 3 ms per capture | ✅ | ✅ | 🟡 | ✅ |
+| Cheap telemetry in Rust | host capture of train, consists, clock in the Rust DLL, 3 ms per capture | ✅ | ✅ | ✅ (room from the world package, sweep slices cover every slot, forward speed; `tswcoop_core` capture tests) | ✅ |
 | Rust DLL instead of C++ | the game-side mod as a Rust `dwmapi.dll` proxy that chain-loads UE4SS | ✅ | ✅ | ✅ | ✅ |
 | Game state journal | what the game did (loads, crashes) as a journal (`journal.rs`, `crashes.rs`) | ✅ | ✅ | ✅ (clock stop/jump, motion, widget diff, crash report parsing and once-only reporting) | ✅ |
 | Skip intro | skip the start-up videos (`skip_intro.rs`) | ✅ | ✅ | ✅ (screen wait/advance decision, last screen from the array) | ✅ |
@@ -90,7 +90,7 @@ git history).
 | Live map (Pages) | session code → page with the players and the host's train on a map, moving between the host's 5 s map posts (`POST /v1/map`, public sessions only) | ✅ | ✅ | ✅ (`announce` test, browser) | ❌ |
 | Local web view | live map, players, chat, host controls from the mod's web server (SSE) | ✅ | ✅ | 🟡 (mock in a browser) | 🟡 (dev endpoints yes, page no) |
 | Kick and ban | at runtime from the web view, bans from the config, refused list | ✅ | ✅ | ✅ | 🟡 (config ban only) |
-| Server log | joins, leaves, timeouts, refusals (banned, password, full, mismatch), chat into the mod log | ✅ | ✅ | 🟡 | ✅ |
+| Server log | joins, leaves, timeouts, refusals (banned, password, full, mismatch), chat into the mod log | ✅ | ✅ | ✅ (filter and one line per event through a capturing subscriber) | ✅ |
 | Version compatibility | one protocol, mod version and game build per session; mismatches refused (`error{code:"version"}`) with both versions named, no retry | ✅ | ✅ | ✅ | ❌ |
 | Entitlement check | guests report their installed DLC packs (pak indices, cached); the host refuses joins lacking the pack of its route or of a car of its train (`error{code:"entitlement"}`); guests already in when the host changes train get a non-fatal `entitlement` warning (toast) and stay; AI trains need nothing (a ghost whose class is not installed is simply not drawn); not yet: Steam licence check (`BIsDlcInstalled`, needs a pack → app id mapping) | ✅ | 🟡 | ✅ (pak reader on this machine's DLC, relay and client tests, incl. the in-session warning) | ❌ |
 | Mod/data sync | host → guest sync of mod version/config and data-only content; so far a version refusal names the download page | 🟡 | ❌ | ❌ | ❌ |
