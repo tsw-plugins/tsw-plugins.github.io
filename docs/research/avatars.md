@@ -36,6 +36,16 @@ session scratchpad (`avatar-spike.lua`, `avatar-dress.lua`, `avatar-snap.lua`).
   female `CH_F_*` equivalents.
 - `Stand/CH_M_Stand1_Idle*`, `CH_M_Stand5_Idle2` (loaded at Fulda).
 - `Carriage/CH_M_CarSit1_Idle*`, `Sit/CH_M_BenchSit*` (seated).
+- `Crouch/CH_M_hiker1`: the only male crouch (the female one is
+  `Hiking/CH_F_hiker_Crouched`). Other low poses that might serve:
+  `CH_M_Trackside_Welding_Loop`, `CH_M_Trackside_Sawing_Loop`,
+  `CH_M_Trackside_Gesturing_Low`, `CH_M_Shoveling_Snow`.
+
+The list comes from the pak indexes: the directory index sits in the last
+tens of MB of each `Content/Paks/*.pak` in plain text, so
+`tail -c 60000000 <pak> | grep -a -o '[A-Za-z0-9_]*\.uasset'` lists the
+asset names and `grep -a -o -P 'Male/Anims/Crouch/.{0,600}'` shows the
+files after a directory (2026-10-18: ~49,000 names over the 7 paks).
 
 UE4SS `LoadAsset` fails for every `Locomotion/` asset (returns an invalid
 object, nothing is loaded). The engine's own loader works:

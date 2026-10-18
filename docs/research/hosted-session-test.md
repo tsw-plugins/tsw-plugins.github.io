@@ -62,7 +62,9 @@ reads the object itself and is only for objects the game just returned.
 
 - The crouch pose is the male bench-sit idle (the only crouch animation,
   `CH_F_hiker_Crouched`, is for the female skeleton): a crouching bot looks
-  seated in the air.
+  seated in the air. *Since then:* the pak index has a male one,
+  `Male/Anims/Crouch/CH_M_hiker1`, now played first (bench sit as the
+  fallback); untested in game.
 - The game build is not read yet (`build=0`), so a build mismatch is never
   reported. *Since then:* read with `GetBuildNumber` (`src/game_info.rs`),
   untested in game.
