@@ -118,4 +118,4 @@ git history).
 | Feature | Description | Started | Finished | Harness | In game |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | Host validates guests | rate limits, size limits, schema, finite in-bounds values; no spawn/teleport requests exist | ✅ | ✅ | ✅ | ❌ |
-| Guests check the host | guests ignore or leave on impossible or malformed updates (teleports, junk) | 🟡 (emulator only) | ❌ | 🟡 | ❌ |
+| Guests check the host | every relayed message is checked (`tsw_coop_proto::sanity`, client `guard.rs`): bad numbers, oversize, malformed, echoes and duplicates are dropped, teleports counted; 20 bad messages in 10 s mute a guest, or make us leave a host | ✅ | ✅ | ✅ | ❌ |
