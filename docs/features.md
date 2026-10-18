@@ -38,8 +38,8 @@ git history).
 | Performance on Linux | research and fixes for slow motion with many vehicles (`docs/research/performance.md`) | ✅ | ✅ | ➖ | ✅ |
 | Cheap telemetry in Rust | host capture of train, consists, clock in the Rust DLL, 3 ms per capture | ✅ | ✅ | 🟡 | ✅ |
 | Rust DLL instead of C++ | the game-side mod as a Rust `dwmapi.dll` proxy that chain-loads UE4SS | ✅ | ✅ | ✅ | ✅ |
-| Game state journal | what the game did (loads, crashes) as a journal (`journal.rs`, `crashes.rs`) | ✅ | ✅ | ❌ | ✅ |
-| Skip intro | skip the start-up videos (`skip_intro.rs`) | ✅ | ✅ | ❌ | ✅ |
+| Game state journal | what the game did (loads, crashes) as a journal (`journal.rs`, `crashes.rs`) | ✅ | ✅ | ✅ (clock stop/jump, motion, widget diff, crash report parsing and once-only reporting) | ✅ |
+| Skip intro | skip the start-up videos (`skip_intro.rs`) | ✅ | ✅ | ✅ (screen wait/advance decision, last screen from the array) | ✅ |
 | Dev API | web dev endpoints: simulated keys, quit, console, used for code-driven tests (`devapi.sh`) | ✅ | ✅ | ✅ | ✅ |
 
 ## Players and the world
