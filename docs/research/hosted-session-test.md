@@ -64,4 +64,5 @@ reads the object itself and is only for objects the game just returned.
   `CH_F_hiker_Crouched`, is for the female skeleton): a crouching bot looks
   seated in the air.
 - The game build is not read yet (`build=0`), so a build mismatch is never
-  reported.
+  reported. *Since then:* read with `GetBuildNumber` (`src/game_info.rs`),
+  untested in game.
