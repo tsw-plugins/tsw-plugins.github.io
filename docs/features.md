@@ -70,7 +70,7 @@ git history).
 | Guest drives the host's train | free seat = first come (F8), the host applies the guest's lever values, the host reclaims (BR 146) | ✅ | ✅ | ✅ | 🟡 (emulated guest) |
 | Guest cab view | the driving guest looks out of the ghost cab | ✅ | ✅ | ❌ | 🟡 (emulated host) |
 | Stop on a lost driver | the host's train stops when the driving guest leaves or is silent for 4 s | ✅ | ✅ | ✅ | ❌ |
-| Brake when the host leaves | emergency brake when the host leaves the cab with nobody driving | ❌ | ❌ | ❌ | ❌ |
+| Brake when the host leaves | the train the host leaves (out of the cab for 2 s, or into another train at once) gets power off and full train brake; a remote driver loses the seat with it (`drive/leave.rs`) | ✅ | ✅ | ✅ (decision tests incl. a 2 s grace for camera changes) | ❌ |
 | Other train classes | control tables beyond the BR 146 | ❌ | ❌ | ❌ | ❌ |
 
 ## Sessions, joining, discovery
