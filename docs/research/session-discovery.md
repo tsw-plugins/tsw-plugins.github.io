@@ -12,8 +12,10 @@ integration tests), not yet tried in game:
 - port mapping, UPnP-IGD only (`tsw-coop-client/src/portmap.rs`, "Reaching
   the host" below).
 
-Not built yet: PCP / NAT-PMP, IPv6 pinholes, the master and Pages site,
-short codes, iroh. The text below is the concept as decided.
+Built later on 2026-10-18 (see their sections): the master with short
+codes, QUIC over iroh. Not built yet: PCP / NAT-PMP, IPv6 pinholes, hole
+punching, the Pages site. Current state of every feature:
+`docs/features.md`. The text below is the concept as decided.
 
 Originally a concept. Asked for by the maintainer: hosts may list a session
 publicly (opt-in in the mod settings), set a password and a player limit;
