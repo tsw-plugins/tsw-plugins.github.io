@@ -58,6 +58,34 @@ unless unknown types are mapped to unused) and `llvm-symbolizer
 **Rule:** an `Object` kept across frames is a `Held`; `Object::is_live`
 reads the object itself and is only for objects the game just returned.
 
+## Second run: public session with a password (2026-10-18)
+
+Free Roam on Frankfurt S-Bahn (`tswup play FrankfurtSBahn free`), `public = on`,
+`password`, `master` = the NAS master, later `nat_relay = n0`. Bots from `crowd` with the
+new switches (`CROWD_PACKS`, `CROWD_MOD`/`CROWD_BUILD`, `CROWD_TRANSPORT`, `CROWD_ADDRS`,
+`CROWD_ROGUE`, `CROWD_FRONT`).
+
+- **Crash at start, fixed:** the game ended right after the mod's first two log lines,
+  before UE4SS loaded, with no crash report. The mod asked Steam (`GetLaunchCommandLine`,
+  and the new DLC licence check) during the DLL load, before the game had initialised
+  Steamworks. Both now run from the tick.
+- **Seen working:** listing on the master with a short code, `/status` over LAN and the
+  public address (hairpin), refusals for missing DLC, banned, full, wrong password, older
+  mod and other build, each with its reason in the scoreboard's refused section; runtime
+  kick (the waiting 9th bot took the seat); QUIC through the router's UDP mapping; a guest
+  with no address joining through n0's relay; the web view page, the spectator page, the
+  Pages site against the NAS master with the live map.
+- **Rogue guest:** 1528 messages over the rate limit, 60 out-of-bounds positions and 59
+  oversized messages were dropped; the game was unaffected. Two gaps fixed: every dropped
+  message was a log line (now one count per player per 10 s), and chat lines had no length
+  cap (now 500 characters).
+- **Screenshots without the window:** the window-capture tool returns whatever window covers
+  the game. `devapi.sh shot` asks the game itself (`shot showui`, the PNG lands in the
+  Proton prefix's `Saved/Screenshots/WindowsNoEditor`), UI included, whatever is on top.
+- **Keys reach the unfocused game:** under Proton the game read keys typed into another
+  window (photo mode on O and the task panel on T opened while the maintainer typed
+  elsewhere).
+
 ## Still open
 
 - The crouch pose is the male bench-sit idle (the only crouch animation,
