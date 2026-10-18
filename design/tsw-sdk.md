@@ -9,6 +9,13 @@ last_edited: 2026-10-18
 
 # tsw-sdk: concept (proposal, 2026-10-18)
 
+> **Superseded in part (2026-10-18, same day).** The loader this proposal describes was built as
+> [uniloader](https://uniloaders.github.io/), which loads plugins for any game: plugin loading,
+> the C ABI, services, events, settings, the console, fault isolation and Lua live there. tsw-sdk
+> became the Train Sim World adapter plugin (`tsw.dll`) plus the crates plugins build on; see
+> [plugins/tsw-sdk](../plugins/tsw-sdk.md). The game-specific parts below (engine access, menus,
+> the indicator, game state) still describe what the adapter does or will do.
+
 `tsw-sdk` is the one game-side DLL that every mod of the `tsw-plugins` org builds on. It replaces
 UE4SS as the loader, owns everything the game exposes (the engine, input, HUD, menus and game state),
 and hosts **plugins**: Rust `cdylib`s and Lua scripts. Today all of this lives inside tsw-coop's

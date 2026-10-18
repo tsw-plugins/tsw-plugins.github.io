@@ -1,7 +1,7 @@
 ---
 name: plugin-tsw-sdk
 description: >-
-  tsw-sdk, the one game-side DLL every tsw-plugins mod builds on: what it does, its state, and where the design and the guides are.
+  tsw-sdk, the Train Sim World adapter for uniloader that every tsw-plugins mod builds on: what it does, its state, and where the design and the guides are.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-18T11:57+0200
 last_edited: 2026-10-18T11:57+0200
@@ -9,22 +9,26 @@ last_edited: 2026-10-18T11:57+0200
 
 # tsw-sdk
 
-**State: proposal.** The design is [design/tsw-sdk.md](../design/tsw-sdk.md); nothing is built
-yet. Today the same code lives inside tsw-coop's `dwmapi.dll` (`mod/native`).
+**State: working (2026-10-18).** The loader half of the [design](../design/tsw-sdk.md) became
+[uniloader](https://uniloaders.github.io/), a loader for any game: plugin loading, the C ABI,
+services and events between plugins, settings, the console, fault isolation and Lua. tsw-sdk is
+the Train Sim World half:
 
-tsw-sdk is the `dwmapi.dll` in the game's `Win64` folder. It replaces UE4SS as the loader, owns
-everything the game exposes (the engine, input, HUD, menus and game state) and hosts plugins:
+- **`tsw.dll`, the TSW adapter plugin.** Scans the running exe for the engine once
+  (patternsleuth), hooks the game tick through `GEngine`'s vtable, skips the start-up screens,
+  puts the plugin indicator (a puzzle piece listing uniloader, its plugins and UE4SS) on the main
+  menu, and reports the game's crash reports. Console: `tsw.status`, `tsw.console`, `tsw.quit`,
+  `tsw.plugins`.
+- **`tsw-game`**, the `tsw` service client: a feature plugin adopts the adapter's scan and gets
+  a game-thread tick with the player controller every frame.
+- **`tsw-sdk-host`**, the engine access every plugin links: objects, names, reflection, native
+  calls, UMG widgets, the game's toasts, input, Steam, HTTP.
 
-- **Rust plugins** (`cdylib`) over a C ABI, through the safe `tsw-sdk` wrapper crate
-- **Lua plugins**, with Lua 5.4 embedded in the SDK (UE4SS is a development tool only)
-- an **event bus**, a shared **state store** and **services** for plugins to talk to each other
-- **settings and menus** rendered by the SDK, a plugin indicator on every menu screen and a
-  Plugins screen to enable, disable and configure plugins
-- **failure isolation**: a plugin that panics or faults is disabled for the session; a crash
-  attributed to a plugin starts the next session in safe mode
+Verified in game on build 886: scan in ~0.1 s, tick hooked, intro skipped in 1 s, indicator and
+Plugins screen up, tsw-jump and tsw-coop running on the adapter's tick, clean shutdown.
 
 | | |
 | --- | --- |
-| Repository | `tsw-plugins/tsw-sdk` (not created yet) |
-| Install | [install.md](../install.md#planned-tsw-sdk-and-plugins) |
-| Writing plugins | [sdk/](../sdk/) |
+| Repository | [tsw-plugins/tsw-sdk](https://github.com/tsw-plugins/tsw-sdk) |
+| Install | [install.md](../install.md) |
+| Writing plugins | [sdk/](../sdk/), [uniloader's plugin guide](https://uniloaders.github.io/docs/plugins.html) |

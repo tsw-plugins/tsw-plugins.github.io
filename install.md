@@ -1,30 +1,55 @@
 ---
 name: install
 description: >-
-  Installing, checking and removing the mods on Windows and Linux/Proton: tsw-coop's installer today, and the planned tsw-sdk layout with plugins, uninstall and safe mode.
+  Installing, checking and removing the mods on Windows and Linux/Proton: uniloader as dwmapi.dll, the TSW adapter and the plugins in plugins/, tsw-coop's installers.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-18T11:57+0200
-last_edited: 2026-10-18T11:57+0200
+last_edited: 2026-10-18T15:30+0200
 ---
 
 # Install
 
-There are no published releases yet. Today the only mod is **tsw-coop**, a single `dwmapi.dll`
-built from [tsw-coop](https://github.com/tsw-plugins/tsw-coop) (`mod/native/build.sh`, output
-`mod/out/native/dwmapi.dll`). Once [tsw-sdk](plugins/tsw-sdk.md) exists, the SDK is installed
-once and plugins are unzipped next to it (see [Planned](#planned-tsw-sdk-and-plugins)).
+The mods are plugins of [uniloader](https://uniloaders.github.io/), a game-agnostic Rust plugin
+loader. There are no published releases yet; build from source (below).
 
 The game directory below is `…/Train Sim World 7/WindowsNoEditor/TS2Prototype/Binaries/Win64/`.
 
-## tsw-coop today
+## Layout
+
+```text
+Win64/
+  dwmapi.dll                 uniloader (the game loads it as dwmapi.dll)
+  plugins/
+    tsw.dll                  the TSW adapter (tsw-sdk): engine scan, game tick, skip-intro, indicator
+    tsw/puzzle.png           the plugin indicator's icon
+    jump.dll                 tsw-jump
+    coop.dll                 tsw-coop
+  uniloader/
+    config/loader.toml       load = ["ue4ss/UE4SS.dll"] when UE4SS should run too
+    config/<plugin>.toml     each plugin's settings, written by the loader
+    logs/loader.log          the loader's and the plugins' log
+  tswcoop/                   tsw-coop's images
+  tswcoop.cfg                tsw-coop's relay, hosting and joining settings
+  tswcoop-native.log         tsw-coop's own log
+```
+
+Every plugin needs `tsw.dll`; each feature plugin is optional. Proton loads `dwmapi.dll` only
+with the launch option `WINEDLLOVERRIDES="dwmapi=n,b" %command%` (the same one UE4SS needs).
+
+## tsw-coop (with everything it needs)
+
+`mod/native/build.sh` in [tsw-coop](https://github.com/tsw-plugins/tsw-coop) builds a folder laid
+out like `Win64/` (`mod/out/native/`) holding uniloader, the adapter, tsw-jump and tsw-coop.
 
 ### Windows
 
-Run `install.bat` from the folder that holds `dwmapi.dll`. It calls the installer built into the
-DLL (`rundll32 dwmapi.dll,Install`), which:
+Run `install.bat` from that folder. It calls the installer built into the mod
+(`rundll32 plugins\coop.dll,Install`), which:
 
 - finds the game through Steam's libraries
-- keeps an existing `dwmapi.dll` (UE4SS's loader) instead of overwriting it
+- keeps an existing `dwmapi.dll` (UE4SS's loader) as `dwmapi.dll.ue4ss` instead of overwriting
+  it, and replaces the old standalone tsw-coop `dwmapi.dll`
+- tells uniloader to load UE4SS when it is installed in `ue4ss/`
 - writes a starter `tswcoop.cfg`
 - registers `tswcoop://` links
 
@@ -34,34 +59,35 @@ Run [`scripts/install-tswcoop`](https://github.com/tsw-plugins/tsw-coop/blob/mai
 
 | Command | What it does |
 | --- | --- |
-| `install-tswcoop [--from DIR] [--no-link]` | Install or update: copies `dwmapi.dll` and `tswcoop/`, keeps a foreign `dwmapi.dll` as `dwmapi.dll.ue4ss`, writes a commented `tswcoop.cfg`, checks the launch options, registers the `tswcoop://` handler |
+| `install-tswcoop [--from DIR] [--no-link]` | Install or update: as on Windows, then checks the launch options and registers the `tswcoop://` handler |
 | `install-tswcoop --check` | Say what is installed |
 | `install-tswcoop --uninstall` | Put the original `dwmapi.dll` back |
 
-Proton loads the DLL only with the launch option `WINEDLLOVERRIDES="dwmapi=n,b" %command%`; the
-script checks for it.
+## The adapter and tsw-jump alone
 
-### Settings and switches
+`scripts/deploy.sh` in [tsw-sdk](https://github.com/tsw-plugins/tsw-sdk) installs uniloader, the
+adapter and whichever plugins are built in the sibling checkouts.
 
-- `Win64/tswcoop.cfg`: the relay, hosting and joining settings (all keys:
-  [`settings.rs`](https://github.com/tsw-plugins/tsw-coop/blob/main/server/crates/tsw-coop-client/src/settings.rs)).
-- Files next to the game exe turn single features off: `tswcoop-native-no-ue4ss` (no UE4SS
-  chain-load), `tswcoop-no-skip-intro`, `tswcoop-no-jump`.
-- Log: `Win64/tswcoop-native.log`.
+## Settings and switches
 
-## Planned: tsw-sdk and plugins
+Plugin settings are changed in uniloader's console (`set <plugin>.<key> <value>`), in tsw-coop's
+F9 menu, or in `uniloader/config/<plugin>.toml` while the game is closed.
 
-From the [tsw-sdk design](design/tsw-sdk.md) (sections 2 and 8.2); nothing of this exists yet.
+| Setting | Default | Effect |
+| --- | --- | --- |
+| `tsw.skip_intro` | `true` | Skip the logo videos, safety notice and title screen (next start) |
+| `tsw.indicator` | `true` | The puzzle piece on the main menu and its Plugins screen (next start) |
+| `jump.enabled` | `true` | Space jumps on foot; photo mode moves to O (at once) |
 
-| Release zip | Contents |
-| --- | --- |
-| `tsw-sdk-<ver>-win64.zip` | `dwmapi.dll`, `tsw/{assets,data,lua}`, `tsw/sdk.toml.example`, `install.bat` (`rundll32 dwmapi.dll,Install`), `install-tsw.sh` (Proton) |
-| `<plugin>-<ver>.zip` | `tsw/plugins/<id>/…`; unzip into `Win64/` |
-| `tsw-coop-<ver>-bundle.zip` | SDK and coop, for one-step installs |
+The adapter's console commands: `tsw.status`, `tsw.console <command>` (the engine's console),
+`tsw.quit`, `tsw.plugins`.
 
-- **Uninstall:** delete `dwmapi.dll` and `tsw/`.
-- **Disable a plugin:** the Plugins screen (puzzle-piece icon on every menu screen), or
-  `disabled = ["<id>"]` in `tsw/sdk.toml`.
-- **Safe mode:** after a crash before the first tick, or one attributed to a plugin, the next start
-  loads only the SDK and asks whether to enable the plugin again. Command-line overrides:
-  `-tsw-noplugins` and `-tsw-only=a,b`.
+The flag files of the standalone mod (`tswcoop-native-no-ue4ss`, `tswcoop-no-skip-intro`,
+`tswcoop-no-jump`) are no longer read: use `loader.toml`'s `load` list and the settings above.
+
+## Removing
+
+Delete `dwmapi.dll` (or put `dwmapi.dll.ue4ss` back as `dwmapi.dll`), `plugins/` and
+`uniloader/`. To switch a single plugin off, add it to `disabled_plugins` in
+`uniloader/config/loader.toml` (see [uniloader's configuration](https://uniloaders.github.io/docs/configuration.html)).
+`--noplugins` on the game's command line starts it with no plugins at all.

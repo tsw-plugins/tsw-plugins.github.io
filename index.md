@@ -21,9 +21,9 @@ is documented here.
 
 | Plugin | What it is | State |
 | --- | --- | --- |
-| [tsw-sdk](plugins/tsw-sdk.md) | The loader (`dwmapi.dll`) every other mod builds on: engine access, input, HUD and menus, game state, Rust and Lua plugins | proposal |
-| [tsw-coop](plugins/tsw-coop/) | Co-op multiplayer: a host runs a normal scenario, friends join that world as walking passengers and can drive the host's train | in development, runs today as its own `dwmapi.dll` |
-| [tsw-jump](plugins/tsw-jump.md) | Jump on Space while on foot (photo mode moves to O) | part of tsw-coop today; becomes a standalone plugin |
+| [tsw-sdk](plugins/tsw-sdk.md) | The TSW adapter (`tsw.dll`) for [uniloader](https://uniloaders.github.io/) every other mod builds on: engine scan, game tick, skip-intro, plugin indicator, engine access | working |
+| [tsw-coop](plugins/tsw-coop/) | Co-op multiplayer: a host runs a normal scenario, friends join that world as walking passengers and can drive the host's train | in development, a uniloader plugin (`coop.dll`) |
+| [tsw-jump](plugins/tsw-jump.md) | Jump on Space while on foot (photo mode moves to O) | working, a uniloader plugin (`jump.dll`) |
 | [tsw-mp](plugins/tsw-mp.md) | A future multiplayer plugin sharing ghost trains and avatars with tsw-coop | future |
 
 ## Documentation
