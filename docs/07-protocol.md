@@ -208,14 +208,20 @@ relay: `--ban`) are checked before anything else: a banned player id or
 address gets `error{code:"auth", fatal:true}` "you are banned from this
 session." An IPv4-mapped IPv6 address counts as the IPv4 address.
 
+One mod version and one game build per session (docs/08): after the proof,
+a guest whose mod version (after the client name: `tsw-coop-native/0.1.0`
+is `0.1.0`) differs from the session's, or whose game build differs from
+the host's (once the host is in; 0 = unknown, not compared), gets
+`error{code:"version", fatal:true}` naming both versions. Its client does
+not retry.
+
 **What the relay logs** (the host: `server:` lines in
 `tswcoop-native.log`; standalone: stderr), with connection, address,
 player id and name: every join (country, level, mod, game build, route),
 leave with its reason (`closed`, `timeout`, `kicked`), idle and hello
 timeouts, every refusal (protocol mismatch, invalid hello, wrong
 password, too many tries or failures from the address, banned, session
-full), a duplicate id replacing a connection, a mod version or game build
-different from the host's (admitted, logged as a warning), chat text (one
+full, version mismatch), a duplicate id replacing a connection, chat text (one
 line, at most 200 characters) and dropped messages over the rate limit.
 Proofs and passwords never.
 
@@ -304,7 +310,7 @@ The first snapshot on a stream is a keyframe of about 2.3–2.6 KB.
 ### `error`
 
 ```json
-{"type":"error","code":"proto|room|rate|schema|auth","message":"…","fatal":true}
+{"type":"error","code":"proto|room|rate|schema|auth|version","message":"…","fatal":true}
 ```
 
 `fatal:true` means the relay closes the connection after sending it.

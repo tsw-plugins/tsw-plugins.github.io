@@ -91,7 +91,7 @@ git history).
 | Local web view | live map, players, chat, host controls from the mod's web server (SSE) | ✅ | ✅ | 🟡 (mock in a browser) | 🟡 (dev endpoints yes, page no) |
 | Kick and ban | at runtime from the web view, bans from the config, refused list | ✅ | ✅ | ✅ | 🟡 (config ban only) |
 | Server log | joins, leaves, timeouts, refusals (banned, password, full, mismatch), chat into the mod log | ✅ | ✅ | 🟡 | ✅ |
-| Version compatibility | one protocol, mod version and game build per session; mismatches refused with a message | ✅ | 🟡 (protocol refused, mod/build only warned) | 🟡 | ❌ |
+| Version compatibility | one protocol, mod version and game build per session; mismatches refused (`error{code:"version"}`) with both versions named, no retry | ✅ | ✅ | ✅ | ❌ |
 | Entitlement check | guests report route/loco DLC; the host refuses joins lacking the route or a spawned vehicle | ❌ | ❌ | ❌ | ❌ |
 | Mod/data sync | host → guest sync of mod version/config and data-only content | ❌ | ❌ | ❌ | ❌ |
 | tswcoop:// links | clicking a `tswcoop://join/` link opens the game and joins | ❌ | ❌ | ❌ | ❌ |
