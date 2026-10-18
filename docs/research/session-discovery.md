@@ -358,7 +358,15 @@ the invite preview ("3/8 players, password") query hosts directly.
   host by querying its `/status` itself once (stops fake listings) and
   rate-limits per IP.
 - `GET /v1/sessions` (public list), `GET /v1/sessions/{code}` (details and
-  invite), CORS for the Pages origin. Traffic is a few KB per heartbeat and
+  invite), CORS for the Pages origin.
+- **Built 2026-10-18** (`server/crates/tsw-coop-master`, host side
+  `tsw-coop-client::announce`, game side `master =` setting): heartbeats
+  with a token from the first answer (a later heartbeat without it is
+  refused, so a public invite does not let others rewrite or close the
+  listing), the `/status` check at public addresses only, 90 s expiry,
+  4 sessions and a burst of 5 registrations (then one per 20 s) per
+  address. Debouncing on change, the position set for the live map and the
+  Pages site are not built yet; the master is not deployed. Traffic is a few KB per heartbeat and
   per page view, fine for the NAS uplink.
 - Pages site: server list → session details (status fields, names, join
   button = `tswcoop://` link, copyable invite and short code). The browser
