@@ -97,7 +97,7 @@ git history).
 | tswcoop:// links | clicking a `tswcoop://join/` link starts the game (Steam) if needed and joins, or switches a running game to that session; Windows: the mod registers `rundll32 dwmapi.dll,JoinLink`; Linux desktops: `scripts/tswcoop-link --install` | ✅ | ✅ | ✅ (Wine tests, real `rundll32` in Wine, script with a fake game folder) | ❌ |
 | Steam invites | Steam overlay invites / rich presence `connect` | ❌ | ❌ | ❌ | ❌ |
 | Discord invites | invites through Discord | ❌ | ❌ | ❌ | ❌ |
-| Spectators | HTTP-API-only clients join as map spectators | 🟡 (relay presence mode) | ❌ | 🟡 | ❌ |
+| Spectators | watch a session without the game: `GET /spectate` on the host's game port is a live map page (players, the host's train, every 2 s) fed by `GET /map` and `/status`, the invite secret guarding private sessions; links in `tswcoop-spectate.txt` and `/api/invite`; clients may also join in `presence` mode | ✅ | ✅ | ✅ (relay test over a real socket, the page in a browser against `headless_host`) | ❌ |
 | Reconnect | lost connections retried with backoff, state restored | ✅ | ✅ | ✅ | ❌ |
 | Up to 8 players | session limit 8 | ✅ | ✅ | ✅ | ✅ |
 | Installer | install the mod into the game: `install.bat` (Windows, `rundll32 dwmapi.dll,Install`: finds the game via Steam's libraries, keeps UE4SS's dwmapi.dll, starter `tswcoop.cfg`, registers links) and `scripts/install-tswcoop` (Linux/Proton, also `--uninstall`, `--check`, checks the launch options) | ✅ | ✅ | ✅ | ❌ |

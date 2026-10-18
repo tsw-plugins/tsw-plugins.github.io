@@ -4,8 +4,10 @@
 // screen up is +X, as the mod's own web view draws the engine's top view.
 
 class LiveMap {
-  constructor(canvas, scaleBox) {
+  /// `period`: milliseconds between updates, the time a move is spread over.
+  constructor(canvas, scaleBox, period = 5000) {
     this.canvas = canvas;
+    this.period = period;
     this.ctx = canvas.getContext("2d");
     this.scaleBox = scaleBox;
     this.from = null;     // previous map
@@ -31,7 +33,7 @@ class LiveMap {
   /// The map as drawn now: players and train moved part of the way.
   current() {
     if (!this.to) return null;
-    const k = Math.min(1, (performance.now() - this.at) / 5000);
+    const k = Math.min(1, (performance.now() - this.at) / this.period);
     const lerp = (a, b) => a.map((v, i) => v + (b[i] - v) * k);
     const before = new Map((this.from?.players || []).map((p) => [p.name, p]));
     const players = this.to.players.map((p) => {
