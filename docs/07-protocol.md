@@ -31,16 +31,21 @@ asks for them.
 
 ```json
 {"type":"hello","proto":0,"mod":"tsw-coop/0.1.0","game":{"build":886,"name":"Train Sim World 7"},
- "player":{"id":"<uuid>","name":"blu","country":"DE","level":42},
+ "player":{"id":"<uuid>","name":"blu","level":42},
  "room":{"route":"TrainingCentre","timetable":"freeroam"},"mode":"full","encodings":["snap1"]}
 ```
 
-- `player.country` (optional): ISO 3166-1 alpha-2 from the player's system
-  region, for a flag next to the name; anything but two letters is dropped,
-  lower case is upper-cased. `player.level` (optional): the game's driver
-  level (the player profile's, as Dovetail Live shows it); above 9999 it is
-  dropped. Both travel on in `welcome.players` and `joined`. Not checked
-  against anything: they are what the player's game says.
+- `player.level` (optional): the game's driver level (the player
+  profile's, as Dovetail Live shows it); above 9999 it is dropped. Not
+  checked against anything: it is what the player's game says.
+- The **country** (ISO 3166-1 alpha-2, for a flag next to the name) is
+  not the client's to say: the relay looks the connection's address up in
+  a `GeoLite2` country database; a player on the host's machine or LAN gets
+  the country of the host's public address. Without a database there is
+  none. A `player.country` in the hello is ignored, except by a relay in
+  testing mode (`--trust-claimed-country`, host setting `geoip = claims`).
+  Level and country travel on in `welcome.players` and `joined`; the
+  joiner's own country comes in `welcome.country`.
 
 - `proto` must equal the relay's protocol version (0) or the relay answers
   `error{code:"proto"}` and closes.
