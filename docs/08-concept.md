@@ -143,3 +143,8 @@ id. Reasons:
   mod with the M5 player replication.
 - Entitlement: exact Steam local API call available from inside the game
   process under Proton (`ISteamApps::BIsDlcInstalled` + `BIsSubscribedApp`).
+  Resolved 2026-10-18: the mod calls `BIsDlcInstalled` through the game's
+  flat API. Each pack's app id comes from Steam's `appmanifest`: every DLC
+  is one depot holding one pak, matched by size (`steam_dlc.rs`). The game's
+  own `TS2BlueprintSupportLibrary::GetStoreId(DLCName)` would be a second
+  source, if size matching ever fails.
