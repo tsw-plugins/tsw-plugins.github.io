@@ -269,3 +269,32 @@ Things to verify in that first run: whether notifications show with a nil image,
 behaves as a parameter, whether `FKey` converts from a table, whether TSW's input stack swallows
 polled keys, and whether the widget survives map travel. It probably does not, so re-create it on
 `ClientRestart`.
+
+## Runtime UMG on the HUD canvas (2026-10-18, native scoreboard)
+
+The TAB scoreboard (`mod/native/src/scoreboard/`) builds widgets at run time
+without any widget blueprint, all through reflected functions:
+
+- **Where to hang them:** `APlayerController::GetHUD` → `ATS2GameHUD`
+  (`is_a` check) → `GetHUDWidget()` (`UTS2GameHUDWidget`) → its
+  `HUDWidgetsCanvasPanel` field (a `UCanvasPanel`, 0x2B8 in build 886).
+  A native `UUserWidget` cannot be created and added to the viewport
+  instead: `UUserWidget` is abstract and `CreateWidget` refuses it.
+- **Making widgets:** `UGameplayStatics::SpawnObject(Class, Outer)` with
+  `Border`, `VerticalBox`, `HorizontalBox`, `SizeBox`, `TextBlock`. They are
+  attached in the same tick, so the garbage collector never sees them
+  unreferenced; the canvas's slots keep them alive until `RemoveFromParent`.
+- **Layout:** `AddChildToCanvas` → `CanvasPanelSlot::SetAnchors/
+  SetAlignment/SetPosition/SetAutoSize/SetZOrder`; `AddChildToVerticalBox`
+  / `AddChildToHorizontalBox` with slot `SetPadding`/`SetVerticalAlignment`;
+  `ContentWidget::SetContent` for `SizeBox`/`Border`.
+- **Text size:** `TextBlock::SetFont` with the block's own `Font`
+  (`FSlateFontInfo`, 0x58 bytes, `Size` int32 at 0x48) copied and the size
+  changed. The shared composite-font pointer inside is copied shallowly into
+  the call frame; the callee copies and releases it, so its count is
+  unchanged.
+- **No flag images:** the pak index has no country flag textures and the
+  UMG default font has no emoji, so band flags are stripes of `Border`s.
+
+Not yet seen in game: whether the canvas is visible in every HUD mode and
+whether TAB is bound by the game.
