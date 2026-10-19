@@ -84,12 +84,12 @@ Found with `tsw.livery` (tsw-sdk adapter) and Ghidra:
   for as long as the host is there, then deletes it again; the IDs it added are listed in
   `tswcoop-liveries/imported.txt` so a crash's leftovers go at the next start. Ghost cars
   spawn in the livery, and cars drawn before it arrived are spawned again.
-- Unit tested. Not yet run end to end in game: the headless host can carry views, a position
-  and a livery for that (`HEADLESS_VIEWS`, `HEADLESS_AT`, `HEADLESS_LIVERY`).
+- Unit tested, and run end to end in game (2026-10-19): the game as guest of a headless host
+  (`HEADLESS_VIEWS`, `HEADLESS_AT`, `HEADLESS_LIVERY`) with a three-car Class 323 in a livery made
+  by code; the livery arrived, was imported, and the ghost cars were spawned again in it, parts
+  0-2.
 
 ## Open
-
-- The end-to-end test against a real guest, and a look at a multi-car livery's parts.
 - Whether imported liveries should stay with the guest (a "keep this livery" choice) instead of
   going when the host leaves.
 - Scenario data (user scenarios, `UGCScenarios`) the same way, kind `scenario`.
