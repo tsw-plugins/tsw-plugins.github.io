@@ -265,16 +265,19 @@ Proofs and passwords never.
 
 The same port answers `GET /status` (plain HTTP, CORS `*`, JSON; fields
 in docs/research/session-discovery.md "Query"): to anyone for a public
-session, otherwise only with `?secret=<hex of the invite's secret>` (403
-without). The standalone relay answers 404. Players are counted over all
+session, otherwise only with the hex of the invite's secret, in an
+`X-Tswcoop-Secret` header or as `?secret=` (403 without). Answers carry
+`Referrer-Policy: no-referrer`. The standalone relay answers 404. Players are counted over all
 rooms, the host first in `names`; `route`/`timetable` are the host's.
 Under the same rule, `GET /map` gives the live map (`{"players": [{name,
 far, yaw, host}], "train": [[x,y,z], …]}`, far-space cm, the host's train
 front to back) and `GET /spectate` an HTML page that shows status and map
 every 2 s, for spectators without the game. The host writes one spectator
-link per invite address (`http://addr/spectate?secret=…`) to
+link per invite address (`http://addr/spectate#secret=…`) to
 `tswcoop-spectate.txt`; it carries the secret, so it is shared like the
-invite.
+invite. The secret sits in the fragment, which browsers never send, so it
+stays out of server logs and `Referer`; the page passes it on in the header
+(and moves an older link's `?secret=` into the fragment).
 
 A hosted session is **one room whatever the route**: each player's own
 room (the `hello.room` it sent) comes as `room` in its `welcome.players`
