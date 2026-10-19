@@ -62,8 +62,18 @@ driving, and a coop session.
   instead: `"dwmapi"="native,builtin"` under `[Software\\Wine\\DllOverrides]` in
   `compatdata/2967990/pfx/user.reg`, written while the game was not running. That is what RaiPal
   does too.
-- `tswcoop://` links have one handler per Windows user. Every time the game starts, coop
-  registers itself as that handler, so the edition started last handles the links.
+- `tswcoop://` links have one handler per Windows user, and every edition's coop registers
+  itself as that handler when it starts. Whichever handler is registered passes a link on to the
+  right edition:
+  - The edition comes from the invite, which since 2026-10-19 carries the host's edition byte.
+    An older invite without one goes to the one edition that is running, and otherwise to the
+    handler's own edition.
+  - Each edition records its `coop.dll` under `HKCU\Software\Classes\tswcoop\editions`. An
+    edition that never started with the mod gets a clear "install it there" message.
+  - Each edition holds its own running marker (`Local\tswcoop-game-N`), so a running TSW 5 no
+    longer looks like a running TSW 7.
+  - The request goes to the game folder (`Binaries/Win64`), not to `plugins/` next to the DLL.
+    The Linux desktop script `scripts/tswcoop-link` still goes to TSW 7 only.
 
 ## Open
 
