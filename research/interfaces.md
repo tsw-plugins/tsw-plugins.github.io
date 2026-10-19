@@ -263,12 +263,21 @@ the game instance) has `bSandboxMode`, `bClearTimetable`, `SandboxManagerClass`,
 `InitialTimetableService`, `TrainEntry` and `bSpawnDriving`; the front end
 (`WBP_Artemis_GameplayModeSelectWidget:OpenFreeroamMenu`) fills these in Blueprint, and
 `UTS2MainMenuWidget::Load()` loads whatever they hold (`GetDriveModeSettings()` returns them).
-2026-10-18, from the headers and the object dump, not yet run: `play <route> free` (`play.lua`)
-sets the route's first timetable, `bSandboxMode`, `bClearTimetable`, `bSpawnDriving = false`
-and `SandboxManagerClass = /Game/Core/Sandbox/BP_SandboxManager.BP_SandboxManager_C` on the main
-menu's settings, then calls `Load()`. To check in game: whether it lands in Free Roam ("Freies
-Spiel"), and whether `Timetable` must be the route's or may stay empty. Spawned trains derail in
-Free Roam anyway (above), so timetable mode is the better test bed.
+Done and run in game 2026-10-20: `tsw.freeroam <route> [n]` (tsw-sdk adapter, `freeroam.rs`;
+the older Lua `play <route> free` in `play.lua` did the same untested). From the main menu it
+mounts the route's timetable `n` (`UDLCManagementFunctionLibrary::
+RequestContentLoadForTimetableOnlySynchronous` with the cached `FCachedTimetable`; without the
+mount `LoadAsset_Blocking` returns nothing), loads it, sets `Timetable`, no
+`InitialTimetableService`, `Scenario` and `TrainEntry` null, `bSpawnDriving = false`,
+`bSandboxMode`, `bClearTimetable` and `SandboxManagerClass =
+/Game/Core/Sandbox/BP_SandboxManager.BP_SandboxManager_C` on the game instance's
+`FrontEndDriveModeSettings`, then calls `Load()` on the main menu widget in the viewport. Fulda:
+the world loads with a `BP_SandboxManager_C` in the level and the player on foot on a platform,
+no timetable running. Two traps: `UTS2MainMenuWidget::GetDriveModeSettings` (`0xF4E9D0`) reads
+`GetWorld()->OwningGameInstance` without a null check, and the splash and outro screens are main
+menu widgets too, left without a world (calling it on one crashed the game); hence the game
+instance's field and the in-viewport widget. Spawned trains derail in Free Roam anyway (above),
+so timetable mode is the better test bed.
 
 ## Recommendations
 
