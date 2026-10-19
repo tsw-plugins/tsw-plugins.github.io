@@ -28,6 +28,7 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [avatars.md](avatars.md) | Bodies for other players: a plain Character dressed from the modular character meshes, animation assets |
 | [other-editions.md](other-editions.md) | Train Sim World 5: everything loads and works; what differed (menu look, Steamworks 1.47, hard-coded "7"s) and the fixes |
 | [game-state-journal.md](game-state-journal.md) | The game state journal and crash reports, and the start-up skip |
+| [progression.md](progression.md) | Where tutorial, task, mission and completion progress lives; tsw-unlock's buttons |
 | [mod-sync.md](mod-sync.md) | Bringing guests the host's mod version, config and data-only content (liveries) |
 | [ue4ss-cpp-toolchain.md](ue4ss-cpp-toolchain.md) | Historical: building a UE4SS C++ mod on Linux without MSVC |
 | [05-tsw-internals.md](05-tsw-internals.md) | Chronological answers from the build 886 dump and the early Lua experiments |
