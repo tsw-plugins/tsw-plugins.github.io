@@ -57,23 +57,27 @@ Before any profile change the plugin copies `Saved/SaveGames` to
   None of these is reflected; calling them by address is not done yet.
 - **The fifth argument** (2026-10-19, Ghidra): the end handler passes its own
   `this`, and the score is that object's `+0x2A4`. `RecordScenario` adds the
-  scenario to the route's statistics (`+0x340`), then `0x10A4150` logs a
-  "ScenarioCompleted" analytics record (it reads the object only when it is
-  not null: `if (p5 != 0 && Cast(p5))`), then raises the high score. So
-  `RecordScenario(profile, route, name, score, null)` records the
-  completion without the analytics record.
+  scenario to the route's statistics (`+0x340`; `0x1088EB0` adds the route's
+  entry first when it is new), then `0x10A4150` builds a "ScenarioCompleted"
+  analytics record (the scenario details only when `Cast(p5)` succeeds), then
+  raises the high score. The strings are `const FString&` (the callee frees
+  neither).
+- **p5 cannot be null** (found in game, 2026-10-19): `0x10A4150` always ends
+  in `0x10A03D0`, which passes p5 to `0x1188340`, i.e.
+  `GetWorldFromContextObject(p5)->OwningGameInstance` with no null check
+  (fault at `+0x1188359`). Any live object in the world works (tsw-unlock
+  passes the player controller, whose `Cast` fails, so the scenario details
+  are left out); the analytics event is then sent as at a real scenario end.
 
-## Open: "Finish Everything"
+## "Finish Everything" (done 2026-10-19)
 
-Real completion records for every scenario need one of:
-
-1. the game's own path per scenario (`tsw.scenario` → `CompleteScenario` →
-   back to the menu): exact records, stats and achievements, but one route
-   load per scenario (heavy for the DLC routes);
-2. the record functions above by address (pattern-scanned), with a null fifth
-   argument (understood 2026-10-19); the achievements and the "all route
-   scenarios" stats the end handler also updates would not follow;
-3. editing the saved profile (GVAS) and reloading it
-   (`GetPlayerProfile` + `SetActivePlayerProfile`).
-
-Until then "Finish Everything" does what "Finish all tutorials" does.
+tsw-unlock records every installed scenario through `RecordScenario`, found
+by its prologue plus its `lea` of the wide string `SCENARIO` (the tutorial
+twin starts with the same bytes), with p5 the player controller and the
+highest `ScoreThresholds` value as score. Each record is checked with
+`HasPlayerCompletedScenario`, then `SaveActivePlayerProfile` writes it; the
+records survive a restart. The route is the `StatTrackingName` of the pack
+whose `RouteDefinition.SoftObject` is the scenario's `RouteAsset` (a
+locomotive pack's scenarios run on another pack's route); scenarios whose
+route is not installed are skipped. Achievements and the "all route
+scenarios" statistics of the end handler do not follow.
