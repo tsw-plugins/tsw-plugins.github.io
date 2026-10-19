@@ -68,6 +68,13 @@ The mesh's forward is +Y: the body needs a relative yaw of -90° to face the
 actor's forward, and its pivot is at the feet, so it sits at minus the
 capsule half height (88 cm) below the actor.
 
+**Seen in game (2026-10-20, Fulda Free Roam, guest of a headless host whose body
+cycles every pose, `HEADLESS_BODY`):** every pose loads and plays. Crouch is the
+kneeling `CH_M_hiker1`, seated the carriage sit `CH_M_CarSit1_Idle2` (on a platform
+it sits on an invisible seat; a body is seated only while its player is in a
+vehicle), walk and run the in-place walk loop, idle and jump the standing idle.
+The bench sit `CH_M_BenchSit1_Idle1` stays the crouch's fallback and is not needed.
+
 ## Plan for `mod/native`
 
 - `avatar` message (proto, added with the emulator's patrol work): far
