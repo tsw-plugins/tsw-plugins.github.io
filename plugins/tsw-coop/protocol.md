@@ -371,6 +371,7 @@ The first snapshot on a stream is a keyframe of about 2.3–2.6 KB.
 | `snapshot` rate | 30/s per player, excess dropped (not an error) |
 | `avatar` rate | 30/s per player, own budget, excess dropped (not an error) |
 | `event`/`chat` rate | 10/s per player |
+| frames of any kind | 4 × the three rates above (280/s), checked before a frame is read: excess dropped unread; past twice that, fatal `error{code:"rate"}` and the connection is closed |
 | vehicles per consist or snapshot | 64 |
 | message size | 64 KiB |
 | players per room | 32 (a hosted session: its `max_players`) |
