@@ -4,7 +4,7 @@ description: >-
   How a host brings its guests the coop mod's version and config and data-only content: the version check at join, the transport, what the game has for liveries, and the plan.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-18T09:57+0200
-last_edited: 2026-10-18T10:28+0200
+last_edited: 2026-10-19T19:05+0200
 ---
 
 # Mod and data sync (2026-10-18)
@@ -48,29 +48,48 @@ traffic.
   host reads a livery's compressed bytes from memory by its `ReskinID`; no save-file parsing.
   `FindReskin(FName)` gives the `UDTGReskin` itself.
 
-## Built (2026-10-18, not yet run in game)
+## Liveries in game (2026-10-19, build 886)
 
-`mod/native/src/livery.rs`, `sys/ugc.rs`: hosting, each car's `livery` that is in
-`UGCSaves->CompressedReskins` goes to the guests as a `blob` of kind `livery` (once per
-livery, again when more guests are in, four parts a second); a guest stores it as
-`tswcoop-liveries/<id>.reskin` next to the config. Tested: reading the array from a fake
-object in the game's layout, offering and pacing, storing on the guest. Not yet: applying a
-stored livery on the guest (add it to the guest's `UGCSaves` and `ReloadReskins`, or build a
-`UDTGReskin` from it), then giving the ghost car that `ReskinID`.
+Found with `tsw.livery` (tsw-sdk adapter) and Ghidra:
 
-## Plan
+- **Making one by code works.** `GetReskinnableDefinitionsByCategory(0..3)` lists 79
+  definitions here (`TArray<FReskinnableDefinitionDetails>`, 0x40 each, the soft pointer
+  first). `CreateReskin(soft pointer, name)` then `SaveReskin` gives a livery with the
+  definition's base look and an ID like `L_<32 hex>`; `SaveReskin` writes the slot at once.
+- **The slot is per Steam user:** `SaveGames/<steam id>/UGCLiveries_0.sav`. Its name is an
+  `FString` on the collection at `+0xE0`, user index at `+0xF0` (not reflected; read in
+  `ReloadReskins`, `0x35AA6E0`). `SaveGameToSlot("UGCLiveries_0")` without the folder writes a
+  second file in `SaveGames/` that the game never reads.
+- **`ReloadReskins`** loads the slot from disk and compresses any `Reskins` entries into
+  `CompressedReskins`. Each compressed entry whose ID is not in `AllReskins` is decompressed
+  (`0x357C6D0`) and becomes a `UDTGReskin` (`0x359C3F0`). A slot file copied in while the game runs
+  is picked up by the next reload.
+- **Import** (what a guest does): append `{ID, bytes}` to the live
+  `UGCSaves.CompressedReskins` (with `GMalloc`), `SaveGameToSlot` into the collection's own
+  slot, `ReloadReskins`, then `FindReskin(ID)`. Tested with a livery deleted and imported from
+  its 582 saved bytes: it comes back under the same ID. `DeleteReskin` saves on its own and
+  asynchronously, so a write right after it can be overtaken; import never deletes first.
+- **A view actor in a livery** (`0x12BF990`, what a vehicle does for its own view): a
+  `UReskinViewActorConstructionModifier` with the view actor as outer, `Reskin` set,
+  `SubDefinitionIndex` = the vehicle's unreflected int at `+0x30C` (which car of a multi-car
+  definition), appended to `AViewActor::ConstructionModifiers` before `FinishSpawning`.
 
-1. In game: make a livery in the livery designer; see which file `SaveReskin` writes (under
-   `Saved/`) and whether `ReloadReskins` picks up a copied file.
-2. Host: for each car of its consist whose `livery` is a user livery, send that file as a
-   `blob` of kind `livery`, id the livery's GUID, once per guest.
-3. Guest: write it where the game keeps liveries (only if absent, never over the guest's own),
-   `ReloadReskins`, then respawn the ghost car with the reskin applied.
-4. Scenario data (user scenarios, `UUGCScenarios`) the same way, kind `scenario`.
+## Built (2026-10-19)
 
-## Open (needs the game)
+- tsw-sdk `reskins.rs`: list, create, save, find, delete, saved form, import (taken out of the
+  slot again when the game cannot load it, e.g. a train the guest lacks), `dress_view`,
+  `view_livery`.
+- tsw-coop: the consist carries `livery_part` (read from the host's own view modifier). The
+  host sends each user livery as a `blob` of kind `livery`. A guest's `Wardrobe` imports it
+  for as long as the host is there, then deletes it again; the IDs it added are listed in
+  `tswcoop-liveries/imported.txt` so a crash's leftovers go at the next start. Ghost cars
+  spawn in the livery, and cars drawn before it arrived are spawned again.
+- Unit tested. Not yet run end to end in game: the headless host can carry views, a position
+  and a livery for that (`HEADLESS_VIEWS`, `HEADLESS_AT`, `HEADLESS_LIVERY`).
 
-- The livery file location and format; whether a copied file loads without the profile
-  registering it (`RegisterUserCreatedLivery`).
-- How to spawn a view actor with a given reskin from code (the modifier, or the vehicle's own
-  `ReskinID` before `FinishSpawning`).
+## Open
+
+- The end-to-end test against a real guest, and a look at a multi-car livery's parts.
+- Whether imported liveries should stay with the guest (a "keep this livery" choice) instead of
+  going when the host leaves.
+- Scenario data (user scenarios, `UGCScenarios`) the same way, kind `scenario`.
