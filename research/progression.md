@@ -54,8 +54,14 @@ Before any profile change the plugin copies `Saved/SaveGames` to
   PlaintextName, int score, x)` or `0x109C3A0` (the same for tutorials; both
   `FindOrAdd` the high-score key and raise the score). The route name is
   `GetCurrentRouteStatTrackingName` (`FCachedRouteDefinition.StatTrackingName`).
-  None of these is reflected, and the fifth argument goes on to telemetry as
-  a number; calling them by address is not done yet.
+  None of these is reflected; calling them by address is not done yet.
+- **The fifth argument** (2026-10-19, Ghidra): the end handler passes its own
+  `this`, and the score is that object's `+0x2A4`. `RecordScenario` adds the
+  scenario to the route's statistics (`+0x340`), then `0x10A4150` logs a
+  "ScenarioCompleted" analytics record (it reads the object only when it is
+  not null: `if (p5 != 0 && Cast(p5))`), then raises the high score. So
+  `RecordScenario(profile, route, name, score, null)` records the
+  completion without the analytics record.
 
 ## Open: "Finish Everything"
 
@@ -64,8 +70,9 @@ Real completion records for every scenario need one of:
 1. the game's own path per scenario (`tsw.scenario` → `CompleteScenario` →
    back to the menu): exact records, stats and achievements, but one route
    load per scenario (heavy for the DLC routes);
-2. the record functions above by address (pattern-scanned), once the fifth
-   argument is understood;
+2. the record functions above by address (pattern-scanned), with a null fifth
+   argument (understood 2026-10-19); the achievements and the "all route
+   scenarios" stats the end handler also updates would not follow;
 3. editing the saved profile (GVAS) and reloading it
    (`GetPlayerProfile` + `SetActivePlayerProfile`).
 
