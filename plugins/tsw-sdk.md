@@ -19,7 +19,8 @@ the Train Sim World half:
   and reports the game's crash reports. It logs where the game is when that changes
   (`[tsw] place: main menu`, `place: world <map>`, `place: elsewhere`), which
   `scripts/tswwait menu|world|exit` waits on. Console: `tsw.status`, `tsw.console`,
-  `tsw.quit`, `tsw.dump <class path>` (a class's reflected properties, into the log).
+  `tsw.quit`, `tsw.dump <class path>` (a class's reflected properties, into the log),
+  `tsw.find <class path>` (the live instances of a class with their paths, into the log).
 - **`tsw_ui.dll`, the game's own menus for plugins.** The Plugins screens in TSW's own menu
   elements. When uniloader's egui overlay runs too (it draws on TSW 7's Direct3D 12 through
   11 on 12), the overlay provides the `overlay` service: plugins' panels and the console are
