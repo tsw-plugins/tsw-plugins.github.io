@@ -73,7 +73,10 @@ driving, and a coop session.
   - Each edition holds its own running marker (`Local\tswcoop-game-N`), so a running TSW 5 no
     longer looks like a running TSW 7.
   - The request goes to the game folder (`Binaries/Win64`), not to `plugins/` next to the DLL.
-    The Linux desktop script `scripts/tswcoop-link` still goes to TSW 7 only.
+  - The Linux desktop handler `scripts/tswcoop-link` follows the same rules. It reads the edition
+    from the invite, finds a running edition from the game's command line, finds each edition's
+    folder through Steam's libraries, and refuses an edition without the mod.
+    `scripts/test-tswcoop-link` tests it in the gate against a fake Steam library.
 
 ## Open
 
