@@ -40,8 +40,9 @@ the Train Sim World half:
 
   Try them with `tsw_ui.toast`, `tsw_ui.notice`, `tsw_ui.dialog message|confirm|input`,
   `tsw_ui.settings <plugin>`, `tsw_ui.panel <plugin>.<name>`. For testing by code,
-  `tsw_ui.press <button text>` presses a row or dialog button on our page on top and
-  `tsw_ui.scroll <px>` scrolls it.
+  `tsw_ui.press <button text>` presses a row or dialog button on our page on top (the
+  console's `Send` too), `tsw_ui.scroll <px>` scrolls it and `tsw_ui.type <text>` fills the
+  console's line. The egui overlay takes `overlay.input type <text>|key <name>|click <x> <y>`.
 - **`tsw-game`**, the `tsw` service client: a feature plugin adopts the adapter's scan and gets
   a game-thread tick with the player controller every frame.
 - **`tsw-sdk-host`**, the engine access every plugin links: objects, names, reflection, native
