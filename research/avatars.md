@@ -86,3 +86,28 @@ The bench sit `CH_M_BenchSit1_Idle1` stays the crouch's fallback and is not need
 - Motion as for ghosts: extrapolate by `vel` (at most 0.5 s), ease, snap
   beyond 50 m. Capsule collision off so a guest's body never blocks the
   host.
+
+## Skins and a live preview (2026-10-20)
+
+The skin selector (`mod/native/src/skins.rs`, `portrait.rs`) dresses a body
+from the profile: `UPlayerProfile.AvatarPresets` (8 rows) and the profile's own
+`AvatarInfo` give gender (`CharacterBase.Gender`, Female = 1), head
+(`CharacterBase.Head`) and hair (a `CharacterHair` data asset whose `HairMesh`
+is the mesh); the body is one of the NPC outfits of that gender.
+
+The page's picture is a render target made at runtime and filled by a scene
+capture, all through reflection:
+
+- `KismetRenderingLibrary:CreateRenderTarget2D(ctx, 340, 510, RTF_RGBA8, clear)`.
+- A spawned `SceneCapture2D`; on its `CaptureComponent2D`: `TextureTarget` =
+  the target, `CaptureSource` = `SCS_FinalColorLDR` (2), `PrimitiveRenderMode`
+  = `PRM_UseShowOnlyList` (2), `FOVAngle` 30, then
+  `ShowOnlyActorComponents(body)`. Only the body is drawn, on black; the
+  world's lights still light it (day, night and the main menu all look right).
+- The body stands 30 m above the camera (`GameplayStatics:GetPlayerCameraManager`
+  → `GetCameraLocation`, plus the world origin), out of the player's view, and
+  the capture 3 m in front of it on +X looking back.
+- `UMG.Image:SetBrushResourceObject(target)` shows it; the brush and
+  `TextureTarget` keep the target alive.
+
+This works at the main menu (`FrontendLevel` is a real world) and in a route.
