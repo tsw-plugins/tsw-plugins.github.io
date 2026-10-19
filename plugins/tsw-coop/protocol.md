@@ -228,7 +228,8 @@ invite's 16 bytes, `password` the session password or empty
 is good for that connection only; neither secret nor password crosses the
 wire. A wrong proof is a non-fatal `error{code:"auth"}`; the third one on
 a connection is fatal, and after 5 wrong proofs in a minute from one
-address that address is refused until the minute is over. A full session
+address that address is refused until the minute is over (guests without an
+address, QUIC through a relay server, count as one). A full session
 answers `error{code:"room", fatal:true}`. A relay without a session (the
 standalone `tsw-coop-relay`) never challenges.
 
