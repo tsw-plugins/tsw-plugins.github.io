@@ -422,6 +422,15 @@ the invite preview ("3/8 players, password") query hosts directly.
   address. Debouncing on change, the position set for the live map and the
   Pages site are not built yet; the master is not deployed. Traffic is a few KB per heartbeat and
   per page view, fine for the NAS uplink.
+- **Signed heartbeats (2026-10-19):** the game signs each heartbeat with the
+  host key (Ed25519 over a fixed label, unix time and the invite; within
+  5 min of the master's clock). Someone who copied an invite and listed it
+  first loses the listing to the key's holder: a proven heartbeat without
+  the token takes it over, after the `/status` check, and only with a proof
+  newer than any the listing had (no replays); the old listing stays until
+  the new one is registered. A heartbeat with the token keeps refreshing,
+  signed or not, so a host whose clock jumps stays listed; the master logs
+  proofs that do not hold. Old games send no proof and are listed as before.
 - Pages site: server list → session details (status fields, names, join
   button = `tswcoop://` link, copyable invite and short code). The browser
   cannot reach hosts itself (https page → plain address is blocked, see

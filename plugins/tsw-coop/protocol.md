@@ -233,6 +233,13 @@ address, QUIC through a relay server, count as one). A full session
 answers `error{code:"room", fatal:true}`. A relay without a session (the
 standalone `tsw-coop-relay`) never challenges.
 
+Player ids are public, so the relay does not take one as proof: the host's
+id is only accepted from the host's own machine (loopback), and an id
+already in the session only from the address it is connected from (a
+reconnect, which replaces the old connection). A guest without an address
+(QUIC through a relay server) proves neither and is refused
+(`error{code:"auth", fatal:true}`) until the old connection has gone.
+
 Bans (host: `ban = <player id or IP>, …` in `tswcoop.cfg`; standalone
 relay: `--ban`) are checked before anything else: a banned player id or
 address gets `error{code:"auth", fatal:true}` "you are banned from this
