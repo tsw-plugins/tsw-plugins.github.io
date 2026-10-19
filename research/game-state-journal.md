@@ -1,7 +1,7 @@
 ---
 name: game-state-journal
 description: >-
-  The game state journal and crash reports added after two unexplained events in one test, and skipping the start-up intro.
+  The game state journal and crash reports added after two unexplained events in one test, skipping the start-up intro, and why a fast skip lost the DLC collection.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-17T20:38+0200
 last_edited: 2026-10-17T21:27+0200
@@ -88,3 +88,42 @@ react; it drives itself.
 The widget stays alive inside the main menu after its last screen and keeps
 answering `CanAdvance = true`, so it is looked up top-level only. On by
 default; the flag file `tswcoop-no-skip-intro` next to the exe turns it off.
+
+### 2026-10-19: the fast skip cost the player their collection
+
+With the skip on, the title showed **FREE EDITION** and the main menu offered
+the Training Centre only, although Steam reported all five DLC packs owned. A
+boot left to the player showed "Zu den Zügen – Ihre Sammlung". So the skip
+was the cause, not the loader.
+
+`GetPlayerEntitlementType` cannot tell when the game is done: it answers Free
+(1) from the first frame, not Unknown. Where the value comes from was found
+in the exe with Ghidra (tsw-sdk `scripts/pe-refs.py` +
+`scripts/ghidra-decompile.sh`, no full analysis needed):
+
+- `execGetPlayerEntitlementType` (`TSW+0x13B3040`) → `TSW+0xE63A40` reads one
+  byte, `GameInstance → DLCManagementSystem (+0x278) → +0xA34`.
+- That byte is written by `TSW+0xE4A190`: Free when the `EntitlementData`
+  table is missing, otherwise the platform's entitlement list (Steam DLC)
+  matched against the table: Paid 3, Upgrade 2, Free 1.
+- Its only caller is the content refresh `TSW+0xE6B030`, run from the DLC
+  system's tick state machine (`TSW+0xE51930`, state byte `+0x6E1`) once its
+  queue of content work is empty. The refresh ends by clearing the reflected
+  `RouteDataTable` and `DifficultyTable`.
+- The debug cvar `ts2.dbg.DLCManagementSystem.PlayerEntitlementType` is
+  registered but nothing reads it in the shipping build (and forcing it would
+  only bypass ownership anyway). There is nothing to "log in": the check is
+  local, it just has to finish.
+
+Measured with the skip only watching (`tswcoop-intro-watch`): during the
+first logo screen `CachedContentList` grows 0 → 11 over 4.3 s, then the
+entitlement turns Paid at 5.7 s, exactly when the logo screen moves on by
+itself. The skip advanced that screen after 0.5 s, cut the caching short, and
+the entitlement stayed Free for good. `ForwardPressed` on the title was a red
+herring: it is ignored there, and `AdvanceToNextScreen` on the title works
+once the content is settled.
+
+Now the skip waits until the entitlement is above Free, or (the Free Edition
+stays Free) the content is cached and `RouteDataTable` let go; then one
+`AdvanceToNextScreen` per screen, never repeated. Main menu 6.5 s after the
+DLL started, with the collection (tsw-sdk e579a89).
