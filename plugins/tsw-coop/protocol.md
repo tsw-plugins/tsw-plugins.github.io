@@ -4,7 +4,7 @@ description: >-
   tsw-coop relay wire protocol v0, as implemented: JSON over WebSocket (hello, consist, snapshot, event, chat), binary snap1 snapshots, far-space positions, joining a hosted session, limits.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-17T06:34+0200
-last_edited: 2026-10-18T08:45+0200
+last_edited: 2026-10-19T19:35+0200
 ---
 
 # 07 — Relay protocol v0
@@ -105,6 +105,9 @@ WebSocket.
 - `class` is the `RVM_*_C` class name; `definition` the
   `URailVehicleDefinition` asset path (what a receiver needs to find the
   local asset or to decide it is missing). `livery` is `ReskinID` or empty.
+  `livery_part` (left out when 0) says which car of a multi-car livery the
+  vehicle is (the reskin modifier's `SubDefinitionIndex`). A user livery
+  itself follows as a `blob` event of kind `livery` (research/mod-sync).
 - Order is front to back in the direction of travel of the lead vehicle.
 
 ### `snapshot` (10–20 Hz while in a vehicle; 1 Hz when parked)

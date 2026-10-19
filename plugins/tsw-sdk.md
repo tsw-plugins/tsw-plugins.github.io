@@ -4,7 +4,7 @@ description: >-
   tsw-sdk, the Train Sim World adapter for uniloader that every tsw-plugins mod builds on: what it does, its state, and where the design and the guides are.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-18T11:57+0200
-last_edited: 2026-10-19T03:10+0200
+last_edited: 2026-10-19T19:35+0200
 ---
 
 # tsw-sdk
@@ -20,7 +20,14 @@ the Train Sim World half:
   (`[tsw] place: main menu`, `place: world <map>`, `place: elsewhere`), which
   `scripts/tswwait menu|world|exit` waits on. Console: `tsw.status`, `tsw.console`,
   `tsw.quit`, `tsw.dump <class path>` (a class's reflected properties, into the log),
-  `tsw.find <class path>` (the live instances of a class with their paths, into the log).
+  `tsw.find <class path>` (the live instances of a class with their paths, into the log),
+  `tsw.scenario <name>` (start an installed scenario or tutorial by its name, from the menu or
+  a route), `tsw.livery list|mine|new <definition> [name]|export <id>|forget <id>|restore|reload|mods`
+  (user liveries for development: the definitions, your own, make one by code, write one's
+  saved form for tsw-coop's headless host, delete and import one again).
+  Plugins that do not start (a missing dependency, another version) are named with the
+  reason in a warning notice: the loader's `loader.plugin_not_running`, shown by the egui
+  overlay or, without it, by `tsw_ui`.
 - **`tsw_ui.dll`, the game's own menus for plugins.** The Plugins screens in TSW's own menu
   elements. When uniloader's egui overlay runs too (it draws on TSW 7's Direct3D 12 through
   11 on 12), the overlay provides the `overlay` service: plugins' panels and the console are
