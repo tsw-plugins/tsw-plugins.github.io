@@ -4,7 +4,7 @@ description: >-
   tsw-sdk, the Train Sim World adapter for uniloader that every tsw-plugins mod builds on: what it does, its state, and where the design and the guides are.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-18T11:57+0200
-last_edited: 2026-10-18T21:55+0200
+last_edited: 2026-10-19T03:10+0200
 ---
 
 # tsw-sdk
@@ -16,23 +16,32 @@ the Train Sim World half:
 
 - **`tsw.dll`, the TSW adapter plugin.** Scans the running exe for the engine once
   (patternsleuth), hooks the game tick through `GEngine`'s vtable, skips the start-up screens,
-  and reports the game's crash reports. Console: `tsw.status`, `tsw.console`, `tsw.quit`,
-  `tsw.dump <class path>` (a class's reflected properties, into the log).
-- **`tsw_ui.dll`, the game's own menus for plugins.** uniloader's `overlay` service drawn with
-  TSW's menu elements instead of an overlay (the egui overlay draws Direct3D 11 only; TSW 7 is
-  Direct3D 12). Plugins that use the overlay service work unchanged:
-  - a panel is a screen on the game's menu stack, built from the game's buttons, checkboxes
-    and sliders, driven by mouse, keyboard or gamepad; Esc/Back closes it;
-  - the **Plugins** screen (every plugin, its settings and panels) and a settings screen per
-    plugin, reached from a **Plugins** button in the game's Settings screen, the puzzle piece
-    at the bottom left of the main menu, `ctrl+shift+p`, or `tsw_ui.plugins`;
-  - a **console** screen (`ctrl+shift+c`, `tsw_ui.console`) with history;
-  - **toasts**: the game's own HUD notifications in a route, cards of ours in the menus;
-    **notices** (large text in the middle); **dialogs**: the game's `DialogWidget_C`, with an
-    input line when asked for.
+  and reports the game's crash reports. It logs where the game is when that changes
+  (`[tsw] place: main menu`, `place: world <map>`, `place: elsewhere`), which
+  `scripts/tswwait menu|world|exit` waits on. Console: `tsw.status`, `tsw.console`,
+  `tsw.quit`, `tsw.dump <class path>` (a class's reflected properties, into the log).
+- **`tsw_ui.dll`, the game's own menus for plugins.** The Plugins screens in TSW's own menu
+  elements. When uniloader's egui overlay runs too (it draws on TSW 7's Direct3D 12 through
+  11 on 12), the overlay provides the `overlay` service: plugins' panels and the console are
+  its windows, which open everywhere, and `tsw_ui` keeps the game-styled screens:
+  - a **PLUGINS** tab in the main menu's and the pause menu's top bar (with the game's
+    active-tab look while ours are up), the puzzle piece at the bottom left of the main menu,
+    `ctrl+shift+p` or `tsw_ui.plugins`; optionally a **Plugins** button in the game's Settings
+    screen (`tsw_ui.settings_entry`);
+  - the **Plugins** hub: **Manage plugins** (every plugin, its settings and panels, Pause /
+    Resume, and Stop, which lasts until the game restarts: a plugin starts once per launch),
+    **Plugin settings** (every plugin's settings on one page), **Console**, **About**;
+  - a settings screen per plugin with every setting kind (paths with a file browser, colours,
+    dates and times, flags, key bindings) and Reset per setting or all (two presses);
+  - the plugins' **showcase card** at the bottom centre of the main menu (from the overlay's
+    `overlay.card` messages);
+  - without the egui overlay: panels as game screens, a console screen, toasts, notices and
+    the game's `DialogWidget_C` dialogs.
 
   Try them with `tsw_ui.toast`, `tsw_ui.notice`, `tsw_ui.dialog message|confirm|input`,
-  `tsw_ui.settings <plugin>`, `tsw_ui.panel <plugin>.<name>`.
+  `tsw_ui.settings <plugin>`, `tsw_ui.panel <plugin>.<name>`. For testing by code,
+  `tsw_ui.press <button text>` presses a row or dialog button on our page on top and
+  `tsw_ui.scroll <px>` scrolls it.
 - **`tsw-game`**, the `tsw` service client: a feature plugin adopts the adapter's scan and gets
   a game-thread tick with the player controller every frame.
 - **`tsw-sdk-host`**, the engine access every plugin links: objects, names, reflection, native
@@ -42,7 +51,9 @@ Verified in game on build 886: scan in ~0.1 s, tick hooked, intro skipped in 1 s
 Plugins screen up, tsw-jump and tsw-coop running on the adapter's tick, clean shutdown. tsw_ui:
 uniloader's kitchen-sink example passes its 68 checks against it; settings screen, toasts,
 notices and the game's dialog seen on the main menu; a real mouse click on a dialog's OK
-answered it.
+answered it. 2026-10-19: every Plugins page walked by code (`tsw_ui.press`), the PLUGINS
+tab in both menus, the showcase card on the main menu, the egui overlay's console in a route
+and through a resize; the game quits in 2 s with the overlay drawing.
 
 | | |
 | --- | --- |
