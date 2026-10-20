@@ -25,6 +25,7 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [session-discovery.md](session-discovery.md) | Hosted sessions: invite and short codes, public listing and master, querying hosts, the session browser, port mapping |
 | [remote-driving.md](remote-driving.md) | A guest drives the host's train: seat and lever messages, applying values on the host, verified in game |
 | [ghosts-native.md](ghosts-native.md) | Ghost trains from the Rust DLL: what the host sends, spawning options, the view-actor ghosts that were built |
+| [train-copies.md](train-copies.md) | Real copies of the host's trains on a guest (G3): spawning at a track position, kinematic trains steered by the mod, what boarding does |
 | [avatars.md](avatars.md) | Bodies for other players: a plain Character dressed from the modular character meshes, animation assets |
 | [other-editions.md](other-editions.md) | Train Sim World 5: everything loads and works; what differed (menu look, Steamworks 1.47, hard-coded "7"s) and the fixes |
 | [game-state-journal.md](game-state-journal.md) | The game state journal and crash reports, and the start-up skip |
