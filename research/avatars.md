@@ -130,3 +130,23 @@ it straight over the menu with a clean outline.
 Canvas text (`K2_DrawText`) does not write alpha, so it cannot be cut out
 this way; the "?" for "Random" is a `TextRenderActor` (`K2_SetText`,
 `SetWorldSize` 170, centred) pictured by the same two captures.
+
+### The same picture in the egui overlay (2026-10-20)
+
+The egui overlay draws on `Present` with its own Direct3D 11 device over the
+game's Direct3D 12 queue (11 on 12), so it cannot use a `UTexture`. It takes
+the render target's `ID3D12Resource` instead (overlay widget `GPU_TEXTURE`).
+tsw-sdk `sys::native_texture` finds it: `UTexture::Resource` (at 0x98..0xD8 in
+this build) points at the RHI texture, which holds `[SizeX, SizeY]` and, a few
+words on, the D3D12 COM object (vtable in a `d3d12*.dll`). Every step is
+checked: the memory is readable (`VirtualQuery`),
+`QueryInterface(IID_ID3D12Resource)` answers, and `GetDesc` reports a 2D
+texture of exactly the render target's size.
+
+The overlay wraps it with `ID3D11On12Device::CreateWrappedResource` (shader
+resource, state `PIXEL_SHADER_RESOURCE` in and out), makes a shader resource
+view and registers it as an egui user texture. It acquires the wrapped
+resource around its own draw only. The canvas output is RGBA8, gamma-encoded and
+premultiplied, which is what egui-directx11 expects, so it shows unchanged.
+Panels put pictures in a column to the right of their widgets, as the game's
+menus do.
