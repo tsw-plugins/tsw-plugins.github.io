@@ -150,3 +150,26 @@ resource around its own draw only. The canvas output is RGBA8, gamma-encoded and
 premultiplied, which is what egui-directx11 expects, so it shows unchanged.
 Panels put pictures in a column to the right of their widgets, as the game's
 menus do.
+
+### In a route: pause and exposure (2026-10-20)
+
+Two things kept the picture from working in a route's pause menu, though it worked at
+the main menu:
+
+- **The pause menu pauses the game.** A scene capture renders from its component tick, and
+  so does the body's animation. Neither runs while paused, so the picture stayed empty.
+  `SetTickableWhenPaused(true)` on the capture actors and components, and on the pictured
+  body and its `Mesh`, fixes it.
+- **Exposure.** A capture takes its exposure from the post-process volumes around it. At
+  Fulda that left the body black: the capture renders, but exposed far too dark. The
+  picture now meters itself (coop `exposure.rs`). Every 250 ms while settling, then every
+  2 s, it reads five pixels down the middle of the finished picture
+  (`ReadRenderTargetPixel`; the alpha says which ones are body). It then moves the colour
+  capture's `AutoExposureBias` (with its override flag) toward a mid-grey body. It settles
+  at about +1 EV at the main menu and +8 EV at Fulda.
+- The capture's own eye adaptation has to be instant (`AutoExposureSpeedUp`/`Down` = 100,
+  overridden). Otherwise each new bias takes seconds to show, and the metering chases its
+  own lag (seen: swinging between -2 and +24 EV).
+
+Dev knobs: `coop.skins bias <EV>|auto` (fixed or metered), `coop.skins height <cm>` (how
+far above the camera the pictured body stands).
