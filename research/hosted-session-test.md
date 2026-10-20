@@ -1,10 +1,10 @@
 ---
 name: hosted-session-test
 description: >-
-  First in-game hosted session with seven bots: what works (GeoIP flags, name tags, TAB scoreboard, menu badge, server log), four bugs found and fixed, the GC rule for cached objects.
-game_build: 886 (TSW 7, Steam build 25890949)
+  First in-game hosted session with seven bots: what works (GeoIP flags, name tags, TAB scoreboard, menu badge, server log), four bugs found and fixed, the GC rule for cached objects; later runs with a password, Windows bots, and TSW 5 on Windows with TSW 7 on Linux both ways.
+game_build: 886 (TSW 7, Steam build 25890949); 699 (TSW 5)
 created: 2026-10-18T03:32+0200
-last_edited: 2026-10-20T05:45+0200
+last_edited: 2026-10-20T09:55+0200
 ---
 
 # Hosted session with a crowd, in game (2026-10-18)
@@ -119,6 +119,47 @@ the same machine. That VM has no GPU, so it cannot run the game itself yet.
   (software rendering only), by one Steam account playing one game at a time, and by the
   Windows Steam client's EULA prompt.
 
+## Fourth run: TSW 5 on Windows with TSW 7 on Linux, both ways (2026-10-20)
+
+The real game on Windows this time: TSW 5 in the same VM (fresh throwaway session), rendered
+by WARP, Windows' software rasterizer (`-AllowSoftwareRendering -warp`; a few fps, enough
+for menus, the Training Centre and avatars). The mod went in the way a player installs it:
+the release folder, `install.bat`, a name in `tswcoop.cfg`.
+
+- **Install:** `install.bat` found TSW 5 through Steam, installed uniloader as `dwmapi.dll`,
+  the plugins and `tswcoop/`, wrote the starter `tswcoop.cfg` and registered `tswcoop://`.
+  Run again over an existing install, it kept the config.
+- **In game on Windows:** 3 of 3 plugins started, tsw found the engine in ~600 ms and skipped
+  the intro, coop put its badge on the main menu and hosted on 7441.
+- **Windows hosts, Linux joins:** TSW 7 on Linux joined the Windows TSW 5 host in the
+  Training Centre; Windows drew the Linux player with its name tag (first picture), and
+  both received the other's avatar and position updates (~10 a second).
+- **Linux hosts, Windows joins:** Linux drew the Windows player (second picture), and the
+  Windows player's leave reached the host cleanly.
+
+| | |
+| :--- | :--- |
+| ![TSW 7 player in Windows TSW 5](img/cross-win-tsw5-host.png) | Windows TSW 5 hosting: the Linux TSW 7 player, "linux-tsw7 joined" |
+| ![TSW 5 player in Linux TSW 7](img/cross-linux-tsw7-host.png) | Linux TSW 7 hosting: the Windows TSW 5 player |
+| ![Installer message](img/windows-installer-box.png) | `install.bat`'s summary after the fixes below |
+
+**What broke, and the fixes:**
+- **Editions could not play together.** The host refused the first join with "the host plays
+  game build 699, you have 886". Every edition counts its own builds, so comparing them across
+  editions refused every mixed session. Builds now compare only between guests and hosts of
+  the same edition, by the game name the hello already carried (tsw-coop 3209563); a client
+  that sends no name keeps the strict check.
+- **Installer message:** a warning icon after a good install, sometimes behind the console,
+  and Steam's raw path (`c:/program files (x86)/steam\steamapps\…`). Now an information box
+  in front with the real path (tsw-coop 86cebce).
+- **The log printed the public IP** (`geoip: public address …`), and logs end up in bug
+  reports. It now says only that the address is known (tsw-coop 13076d2).
+
+**Seen, not changed:** a guest on the host's own machine connected through the host's public
+address (the router turned it around) although the LAN address was in the invite: the
+dialer tries every address at once and keeps the first to connect. On a real LAN the LAN
+address should win; a head start for private addresses would make sure.
+
 ## Still open
 
 - The crouch pose is the male bench-sit idle (the only crouch animation,
@@ -127,5 +168,5 @@ the same machine. That VM has no GPU, so it cannot run the game itself yet.
   `Male/Anims/Crouch/CH_M_hiker1`, now played first (bench sit as the
   fallback); untested in game.
 - The game build is not read yet (`build=0`), so a build mismatch is never
-  reported. *Since then:* read with `GetBuildNumber` (`src/game_info.rs`),
-  untested in game.
+  reported. *Since then:* read with `GetBuildNumber` (`src/game_info.rs`);
+  seen in game on 2026-10-20 (TSW 5: 699, TSW 7: 886, fourth run).
