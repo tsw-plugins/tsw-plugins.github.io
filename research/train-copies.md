@@ -4,7 +4,7 @@ description: >-
   Real copies of the host's trains on a guest (concept stage G3): spawning at a track position, what moves a spawned train, and what boarding does to it. Experiments 1-4 of 2026-10-20.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-20T19:55+0200
-last_edited: 2026-10-20T19:55+0200
+last_edited: 2026-10-20T20:50+0200
 ---
 
 # Real train copies on a guest (G3, 2026-10-20)
@@ -70,3 +70,32 @@ Experiments: tsw-coop `dumps/tsw7-886/experiments/g3-follow/` (Lua through the d
      controller (`Begin*/EndUsingVHIDComponent`) while the pawn stands in a kinematic copy.
 - **Safety:** a copy that becomes dynamic must get the host's brake states at once, or it
   runs away.
+
+## Found in the headers afterwards (2026-10-20 evening)
+
+- **Any single vehicle spawns:** `URailVehicleDefinition` derives from
+  `UTrainEntryDefinition`, so `SpawnFormation` takes a vehicle's own definition, the path a
+  host's consist already carries (`ConsistVehicle::definition`). A whole consist would need a
+  `UTrainFormation` (`TArray<FTrainFormationEntry> Formation`): `UGameplayStatics::SpawnObject`
+  exists in this build, but the array has to be written natively.
+- **No reflected teleport** for a rail vehicle. The simple physics keep their 1D state in
+  `FRailVehicleSimplePhysics::PhysicsState` (`FSimPhysicsSerializableWrapper_Mechanical1DData`,
+  0x80 bytes at component +0x9D0): the next candidate for holding a copy exactly, with
+  `tsw.peek`.
+- **Free Roam is the sandbox:** its `ASandboxManager` spawns trains, removes them
+  (`StartRemovingTrain(URailVehicleComponent*)`) and sets them paths
+  (`SetDestinationForRV`). tsw-coop removes a guest's own AI with it (G2).
+- **AI vehicles often have no definition** (`CreatedFromPtr` null; proto
+  `ConsistVehicle`), only a view class: copying the host's AI (G6) needs a view class →
+  definition map, from the loaded definitions' `ViewActorAsset`.
+
+## The implementation (tsw-coop 57ff6a9, setting `train_copies`, off by default)
+
+The guest spawns the host's lead vehicle from its definition at
+`FindTrainSpawnLocationNearLocation(host car)`, finds the new `ARailVehicle` by comparing
+the live ones before and after, and every capture sets
+`SetSimpleEffortOrBrakeCoefficient` from the gap along the copy's forward axis
+(`copy/follow.rs`: the host's speed plus half the gap per second, full effort at 2 m/s
+error). More than 50 m off or 4 m to the side: placed again. Facing against the host's
+motion: placed again the other way round. Boarded: left to its controls (G4). Its ghost is
+not drawn meanwhile. To be tried in game.

@@ -5,7 +5,7 @@ description: >-
 game_build: 886 (TSW 7, Steam build 25890949)
 status: accepted
 created: 2026-10-17T07:06+0200
-last_edited: 2026-10-20T19:37+0200
+last_edited: 2026-10-20T20:50+0200
 ---
 
 # 08 — Concept and scope decisions (2026-10-17)
@@ -154,14 +154,14 @@ like any train, with a simulation that follows the host instead of running free:
 
 **Stages** (each ends with an in-game check):
 
-| # | Stage | Main unknown |
-| --- | --- | --- |
-| G1 | Auto-load: the host sends mode + timetable/scenario; the guest mounts and loads it (tsw-sdk loaders: `freeroam`, `LoadTimetable`, `LoadScenario`) and then joins | Free Roam start point; scenario identity |
-| G2 | Despawn the guest's AI cleanly (no stale track occupancy) | No clean despawn known yet (05 §10f) |
-| G3 | Spike: spawn a consist as a real train at an exact track position, and keep it on the host's position (kinematic, or simulated and corrected) | The two biggest unknowns: spawn position, external position control |
-| G4 | Generic controls: all `VirtualHIDComponent`s by name, the guest → host input and host → guest state, interlocks, buttons, blueprint-only controls (battery, parking brake) | Controls that need blueprint calls |
-| G5 | Riding along: seats, standing in the cab, car-relative avatar positions | Seat manager on a copied train |
-| G6 | The host's AI trains as real copies (G3 at scale), the DLC check per train | Cost of many simulated copies |
+| # | Stage | Main unknown | State (2026-10-20, tsw-coop) |
+| --- | --- | --- | --- |
+| G1 | Auto-load: the host sends mode + timetable/scenario; the guest mounts and loads it (tsw-sdk loaders: `freeroam`, `LoadTimetable`, `LoadScenario`) and then joins | Free Roam start point; scenario identity | Code (ab52df1, b75c270): a guest connects from the main menu and starts Free Roam on the host's timetable; `/follow` leaves another world for the menu. Free Roam only. Not tried in game yet |
+| G2 | Despawn the guest's AI cleanly (no stale track occupancy) | No clean despawn known yet (05 §10f) | Code (382c08d): Free Roam's `ASandboxManager::StartRemovingTrain` per formation, hidden as before if it stays. A G1 guest starts with the timetable cleared (no AI). Not tried in game yet |
+| G3 | Spike: spawn a consist as a real train at an exact track position, and keep it on the host's position (kinematic, or simulated and corrected) | The two biggest unknowns: spawn position, external position control | Experiments 1–4 (research/train-copies). Code (57ff6a9, setting `train_copies`, off): the lead vehicle from its own `URailVehicleDefinition` via `SpawnFormation`, held by simple-physics effort. Not tried in game yet |
+| G4 | Generic controls: all `VirtualHIDComponent`s by name, the guest → host input and host → guest state, interlocks, buttons, blueprint-only controls (battery, parking brake) | Controls that need blueprint calls | Code (4b054c8): every control under `@<name>` in the host's snapshots; a driving guest in a train of the host's class sends what it moves by name and gets the host's values. Blueprint-only controls still open. Not tried in game yet |
+| G5 | Riding along: seats, standing in the cab, car-relative avatar positions | Seat manager on a copied train | Code (73d88f2): `avatar.rel`, the body's place in the host's car; seats are the copy's own. Not tried in game yet |
+| G6 | The host's AI trains as real copies (G3 at scale), the DLC check per train | Cost of many simulated copies | Waits for G3 in game. AI vehicles often have no definition (`CreatedFromPtr` null): a view class → definition map is needed |
 
 ## Open questions carried forward
 
