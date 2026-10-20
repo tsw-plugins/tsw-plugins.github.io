@@ -116,3 +116,21 @@ BR 146 back and forth on 270 m of Training Centre track at 5 m/s.
 - A host reversing gets a respawn (simple physics drive forwards only): a visible jump.
 - `K2_DestroyActor` on a copy hides it at once; its model actor lingers about 8 s, reporting
   one shared location, then goes.
+
+## Two editions, one machine (2026-10-20, TSW 7 host, TSW 5 guest)
+
+- TSW 5 has no `SetSimpleEffortOrBrakeCoefficient`, but reflects `SimplePhysics`
+  (`TargetEffortOrBrakeFraction` +0x2C, `bStop` +0x3C, struct at component +0x9B0). Writing the two
+  fields drives the copy the same way: it followed the TSW 7 host from standstill to 16.7 m/s
+  within 43–70 cm (mod log), and drove off out of view in the guest's screenshot.
+- The copy's track search starts at the guest pawn's nearest track: with the guest on the next
+  track 8 m away the host's car was "not on the track near us". Next: the host sends its own
+  ribbon location (its pawn sits in its cab), so the guest's place stops mattering.
+- `SetOverrideSpeed` / `SetOverrideLocation` exist in TSW 5 too; still without effect (see 05).
+- A guest taking the host's seat is seated in the copy (`SetControlledDrivable`). Named controls
+  then go both ways: guest throttle 0.285 → host 0.2855, guest high beam → host, host cab
+  lights → guest. The copy's simulation matched the host's (battery, pantograph, brake pipe
+  3.31/3.31 bar, cylinder 4.44/4.36 bar); the desk lamp is lit in both screenshots.
+- Open: a guest giving the seat back stays seated in the copy, and a boarded copy is no
+  longer held to the host. Changing seats in the cab (`Passenger_F`) did not move the pawn
+  through `SetControlledDrivableFromCamera` / `SwitchToAttachedToCameraByIndex`.
