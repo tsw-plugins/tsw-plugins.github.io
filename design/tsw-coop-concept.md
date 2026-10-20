@@ -5,7 +5,7 @@ description: >-
 game_build: 886 (TSW 7, Steam build 25890949)
 status: accepted
 created: 2026-10-17T07:06+0200
-last_edited: 2026-10-18T10:22+0200
+last_edited: 2026-10-20T19:37+0200
 ---
 
 # 08 — Concept and scope decisions (2026-10-17)
@@ -119,6 +119,49 @@ id. Reasons:
 | M5 | Players | walking pawns replicated, boarding and sitting, seat arbitration, guest drives host's train via input forwarding |
 | M6 | Polish | data-pack sync, Steam/URI invites, anticheat validation both ways, reconnect, installer |
 | M7 | Spectator + extras | HTTP-API spectator client, Discord invites, text chat |
+
+## Decisions 2026-10-20: guests live in the host's world
+
+The maintainer's requirements (2026-10-20), replacing the "ghost only" reading of M4/M5:
+
+- **Same world on join.** A guest loads the host's route, mode and timetable (or scenario)
+  automatically; being told where the host is no longer suffices.
+- **The host's trains, real on the guest.** The host's own train and its AI trains are spawned
+  on the guest wherever the guest has their DLC. The guest's own AI trains are **despawned**,
+  not hidden, to make room for them.
+- **Guests get into the host's train:** any passenger seat, standing in the cab, the driver's
+  seat.
+- **Full control from the driver's seat.** A guest in the host's cab operates *everything*
+  through the game's own controls: every lever, switch and button (lights, pantograph,
+  horn, doors, safety systems), with any input the game accepts, custom hardware
+  controllers included. Not just roles (power, brake, reverser) mapped by the mod.
+- **Exactly synchronised**, within network latency.
+
+**Consequence for the architecture.** View-actor ghosts (today's L3) cannot be walked in, sat
+in or driven: the game only routes player input, controllers included, into a *drivable*
+the pawn controls. So the guest needs **real local copies** of the host's trains, boarded
+like any train, with a simulation that follows the host instead of running free:
+
+- **Host authoritative.** The host's simulation is the only one that counts.
+- **Copies follow the host.** The guest's copies take position, speed and control states
+  from the host's snapshots.
+- **Controls go to the host by name.** The guest's control changes on its copy are captured
+  at the controls (`VirtualHIDComponent` by name, or the controller RPCs
+  `Begin*/EndUsingVHIDComponent`), sent to the host and applied there. The host's resulting
+  states come back for every car.
+- **Bodies ride with the car.** Avatars carry their position relative to the car they are in,
+  so bodies ride with the train instead of drifting next to it.
+
+**Stages** (each ends with an in-game check):
+
+| # | Stage | Main unknown |
+| --- | --- | --- |
+| G1 | Auto-load: the host sends mode + timetable/scenario; the guest mounts and loads it (tsw-sdk loaders: `freeroam`, `LoadTimetable`, `LoadScenario`) and then joins | Free Roam start point; scenario identity |
+| G2 | Despawn the guest's AI cleanly (no stale track occupancy) | No clean despawn known yet (05 §10f) |
+| G3 | Spike: spawn a consist as a real train at an exact track position, and keep it on the host's position (kinematic, or simulated and corrected) | The two biggest unknowns: spawn position, external position control |
+| G4 | Generic controls: all `VirtualHIDComponent`s by name, the guest → host input and host → guest state, interlocks, buttons, blueprint-only controls (battery, parking brake) | Controls that need blueprint calls |
+| G5 | Riding along: seats, standing in the cab, car-relative avatar positions | Seat manager on a copied train |
+| G6 | The host's AI trains as real copies (G3 at scale), the DLC check per train | Cost of many simulated copies |
 
 ## Open questions carried forward
 
