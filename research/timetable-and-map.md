@@ -4,7 +4,7 @@ description: >-
   Reading the player's service (stops, scheduled/expected/actual times, platforms, positions, distance to the next stop), the signal and speed limit ahead, and the route's stations for a map view: the classes, fields and functions, what is reachable from reflection, and what tsw-sdk implements.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-20T23:10+0200
-last_edited: 2026-10-20T23:10+0200
+last_edited: 2026-10-20T23:45+0200
 ---
 
 # Timetable and map reading (2026-10-20)
@@ -95,3 +95,9 @@ widget's name and description (05 §driving).
   `Unsupported` (`TABLE_V1_SIZE`).
 - Adapter commands: `tsw.timetable` (service, stops, ahead, driver aid; driver aid only in Free
   Roam) and `tsw.map` log into the uniloader log.
+- 2026-10-20, for [tsw-autopilot](../design/tsw-autopilot.md): `DriverAid` also carries the
+  lists `limits` (`NextSpeedLimits`, `FSpeedLimit { Value, DistanceToNextSpeedLimit,
+  NextSpeedLimitPosition }`) and `signals` (`NextSignals`, `FFoundSignalAspect { Value,
+  DistanceToNextSignal, NextSignalPosition }`), same units assumed, *unverified*; empty when the
+  element structs are missing or the JSON comes from an older adapter. `Reader::track_ahead(pc)`
+  reads the stations and markers ahead alone (one `GetTrackData` call).

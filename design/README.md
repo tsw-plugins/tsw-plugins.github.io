@@ -23,4 +23,5 @@ for something that shipped:
 | --- | --- | --- |
 | [tsw-sdk.md](tsw-sdk.md) | `proposal` | A shared Rust loader that hosts Rust and Lua plugins, carved out of tsw-coop's DLL: loading model, C ABI, Lua, inter-plugin services, the v1 event and function catalogue, repositories and the migration plan |
 | [tsw-coop-concept.md](tsw-coop-concept.md) | `accepted` | tsw-coop's scope: a host-owned world, walking guests, driver handover, relay transport, sessions, entitlements, anticheat |
+| [tsw-autopilot.md](tsw-autopilot.md) | `implemented` | An autopilot plugin: target speed from limits, signals and the stop point, power/brake servo, stops and doors, hand-back on manual input; what it reads and what is still to verify in game |
 | [native-menus.md](native-menus.md) | `proposal` | Real, mouse-driven entries in the game's own menus and a plugin indicator, without cooked assets |
