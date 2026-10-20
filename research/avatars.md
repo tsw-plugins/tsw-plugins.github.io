@@ -111,3 +111,22 @@ capture, all through reflection:
   `TextureTarget` keep the target alive.
 
 This works at the main menu (`FrontendLevel` is a real world) and in a route.
+
+### See-through background (2026-10-20)
+
+`SCS_FinalColorLDR` gives alpha 1 everywhere in this build, also with
+`r.PostProcessing.PropagateAlpha=2` (read-only at runtime; set in the user
+`Engine.ini` only while the game is closed, since the game rewrites that file
+on exit; it did take, `GetConsoleVariableIntValue` read 2, and changed
+nothing). `SCS_SceneColorHDR` into `RTF_RGBA16f` carries alpha = 1 − coverage.
+
+So the preview is two captures of the body from the same spot, combined each
+frame with `BeginDrawCanvasToRenderTarget` into a third RGBA8 target:
+`K2_DrawTexture(colour, BLEND_Opaque)`, then
+`K2_DrawTexture(shape, BLEND_AlphaHoldout)` (destination × (1 − source alpha)).
+The body keeps its colour, the rest becomes transparent; the UMG image shows
+it straight over the menu with a clean outline.
+
+Canvas text (`K2_DrawText`) does not write alpha, so it cannot be cut out
+this way; the "?" for "Random" is a `TextRenderActor` (`K2_SetText`,
+`SetWorldSize` 170, centred) pictured by the same two captures.
