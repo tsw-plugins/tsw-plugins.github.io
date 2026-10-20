@@ -92,4 +92,33 @@ Found with `tsw.livery` (tsw-sdk adapter) and Ghidra:
 ## Open
 - Whether imported liveries should stay with the guest (a "keep this livery" choice) instead of
   going when the host leaves.
-- Scenario data (user scenarios, `UGCScenarios`) the same way, kind `scenario`.
+- Scenario data (user scenarios, `UGCScenarios`) the same way, kind `scenario`. See below.
+
+## User scenarios (research, 2026-10-20)
+
+What the game has (TSW 7, reflection dumps):
+
+- A recipe is `FScenarioDesignRecipe` (0xB0, reflected): name, description,
+  `UserScenarioGuid`, `UGCItemId` (its workshop item when published), rule flags,
+  `TargetAsset` (the route's `UScenarioDesignAsset`), `Services` (each with a formation:
+  train entry, reskins (= liveries), or a `UGCFormationName`), start time, weather.
+- The one being played: `UDriveModeSettings::UserScenarioRecipe` (+0x138, with
+  `bUserScenario`), also kept in the save game (`UTS2SaveGame` +0x220).
+  `UTS2GameInstance::IsPlayingUserScenario()`.
+- Saved recipes: `UScenarioDesignFunctionLibrary` `LoadScenarioDesignRecipes(world, cache,
+  page, per page, design asset, out)`, `SaveScenarioDesignRecipe(world, cache, recipe,
+  dependencies)`, `DeleteScenarioDesignRecipe`, `InvalidateCache`; the cache
+  (`FScenarioDesignSaveCache`) lists `AvailableFiles`, one file per recipe, through a
+  handler `UUGCScenarios` (`GetUGCScenarioSaves()`, no reflected fields). The handler is
+  null at the main menu until the planner made it (`tsw.ugc probe`).
+- The planner (`UTS2MainMenuScenarioDesignWidget`) also talks to the workshop:
+  `QueryMod`, `FindUGCRecipeModId(UGCItemId)`, and the exe has a setting "exporting of
+  recipes as UGC on saving".
+
+Plan: the host sends the recipe it plays (reflected fields to JSON, the services'
+formations and liveries along, user formations as kind `formation` the same way as
+liveries); a guest saves it with `SaveScenarioDesignRecipe` and finds it in its own
+planner, under the same `UserScenarioGuid`. A published recipe could instead go by its
+workshop id. Open before building: what a save writes (one file per recipe under
+`SaveGames`?) and whether saving can publish to the workshop. Test with a throwaway
+profile or with export to UGC off, never by saving into the player's profile blind.
