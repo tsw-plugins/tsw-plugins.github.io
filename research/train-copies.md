@@ -4,7 +4,7 @@ description: >-
   Real copies of the host's trains on a guest (concept stage G3): spawning at a track position, what moves a spawned train, and what boarding does to it. Experiments 1-4 of 2026-10-20.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-20T19:55+0200
-last_edited: 2026-10-20T20:50+0200
+last_edited: 2026-10-20T21:35+0200
 ---
 
 # Real train copies on a guest (G3, 2026-10-20)
@@ -98,4 +98,21 @@ the live ones before and after, and every capture sets
 (`copy/follow.rs`: the host's speed plus half the gap per second, full effort at 2 m/s
 error). More than 50 m off or 4 m to the side: placed again. Facing against the host's
 motion: placed again the other way round. Boarded: left to its controls (G4). Its ghost is
-not drawn meanwhile. To be tried in game.
+not drawn meanwhile.
+
+### Tried in game (2026-10-20 evening, tsw-coop ef21d1c)
+
+Game as guest, the headless host (`HEADLESS_PATH` from `g3-follow/track-path.lua`) running a
+BR 146 back and forth on 270 m of Training Centre track at 5 m/s.
+
+- `FindTrainSpawnLocationNearLocation` returns false for every point (UE-local, far, the
+  pawn's own spot). The spawn position is found instead by walking the track from
+  `FindTrainSpawnLocationNearDriverPawn` (3 km each way, 10 m then 1 m steps): 0.0–0.5 m
+  off, in about 1 ms.
+- The copy's own coordinates, sampled every second by `g3-follow/sample-copy.lua` and
+  projected on the host's track: **0.00 m off the track**, **4.9–5.1 m/s along it** (the
+  host: 5.0). The mod's gap log at the same time: −22 to +1 cm.
+- After a respawn it overshoots to 10.6 m/s and settles within about 8 s.
+- A host reversing gets a respawn (simple physics drive forwards only): a visible jump.
+- `K2_DestroyActor` on a copy hides it at once; its model actor lingers about 8 s, reporting
+  one shared location, then goes.
