@@ -131,6 +131,16 @@ BR 146 back and forth on 270 m of Training Centre track at 5 m/s.
   then go both ways: guest throttle 0.285 → host 0.2855, guest high beam → host, host cab
   lights → guest. The copy's simulation matched the host's (battery, pantograph, brake pipe
   3.31/3.31 bar, cylinder 4.44/4.36 bar); the desk lamp is lit in both screenshots.
-- Open: a guest giving the seat back stays seated in the copy, and a boarded copy is no
-  longer held to the host. Changing seats in the cab (`Passenger_F`) did not move the pawn
-  through `SetControlledDrivableFromCamera` / `SwitchToAttachedToCameraByIndex`.
+- Giving the seat back: `SetControlledDrivable(null)` stands the pawn up in the copy's cab and
+  the copy is held to the host again (fixed). Changing seats in the cab (`Passenger_F`) did not
+  move the pawn through `SetControlledDrivableFromCamera` / `SwitchToAttachedToCameraByIndex`.
+- Fixed: the host now sends the ribbon under its pawn (GUID at 0x08 and distance at 0x18 of the
+  0x1C-byte `FNetworkRibbonLocation`; the first 8 bytes are the game's own and are taken from the
+  guest's world). A guest 1.7 km away on another track found the host's car 0.4 m off in 1 ms.
+- A vehicle far from the camera has no view actor, and its own actor location is meaningless
+  (all BR 146 actors read "3 m" from the pawn). Its physics component's `GetPosition` (far) and
+  `GetForwardVector` are right; the copy reads those now.
+- `SpawnFormation` direction "forwards" can face the copy away from the host's car (its cab F at
+  the host's cab B end). The copy is turned once while the host stands. After that, guest and
+  host sat 12 cm apart in the same cab, and TSW 7 showed the guest's body standing behind the
+  driver's seat (G5, `avatar.rel`).
