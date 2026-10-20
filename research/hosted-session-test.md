@@ -4,7 +4,7 @@ description: >-
   First in-game hosted session with seven bots: what works (GeoIP flags, name tags, TAB scoreboard, menu badge, server log), four bugs found and fixed, the GC rule for cached objects.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-18T03:32+0200
-last_edited: 2026-10-18T11:30+0200
+last_edited: 2026-10-20T05:45+0200
 ---
 
 # Hosted session with a crowd, in game (2026-10-18)
@@ -94,6 +94,30 @@ new switches (`CROWD_PACKS`, `CROWD_MOD`/`CROWD_BUILD`, `CROWD_TRANSPORT`, `CROW
 - **Keys reach the unfocused game:** under Proton the game read keys typed into another
   window (photo mode on O and the task panel on T opened while the maintainer typed
   elsewhere).
+
+## Third run: Windows clients in a Linux-hosted session (2026-10-20)
+
+The first cross-platform run. The host was TSW 7 on Linux (Proton) in Free Roam Fulda,
+hosting with a password. The guests were three `crowd` bots built for native Windows
+(`cargo xwin`, `x86_64-pc-windows-msvc`, `--features iroh`) and run in a Windows 11 VM on
+the same machine. That VM has no GPU, so it cannot run the game itself yet.
+
+- **It works end to end:**
+  - All three joined over WebSocket through the invite's LAN address. In `auto` mode QUIC
+    and WebSocket raced, and the loser was dropped.
+  - Each sent ~1185 avatar updates over 2 minutes.
+  - Their bodies walked, sat and chatted visibly in the Linux game.
+  - They left cleanly, and their bodies were removed.
+- **The DLC check refuses as designed:** without `CROWD_PACKS=FrankfurtFulda` the host
+  answered "this session needs DLC you do not have installed: FrankfurtFulda (for the
+  route)".
+- **The same day, the loader ran natively on Windows (smoke host, no game):** uniloader's
+  `scripts/smoke.sh --vm` passes (plugins, Lua, `.asi`, Direct3D 11 overlay). Running the
+  Windows test binaries there found a real bug, now fixed (uniloader 7e08351): a plugin panic
+  inside the SEH guard aborted the process instead of disabling the plugin.
+- **Not yet:** the game itself on Windows. TSW 5 in the VM is blocked by the missing GPU
+  (software rendering only), by one Steam account playing one game at a time, and by the
+  Windows Steam client's EULA prompt.
 
 ## Still open
 
