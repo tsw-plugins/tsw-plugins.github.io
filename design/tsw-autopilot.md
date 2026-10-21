@@ -102,11 +102,17 @@ The target is the lowest of:
 | --- | --- |
 | Lower limit ahead | the limit minus the margin |
 | Signal at caution (`Approach`, and any unknown aspect) | 40 km/h at the signal |
-| Signal at danger (`Stop`) | 0 at 15 m before the signal |
+| Signal at danger (`Stop`) | 0 at 25 m before the signal |
+| Signal at danger, with PZB | 25 km/h at its 500 Hz magnet (270 m before the signal) |
 | Stop point | 0 |
+| PZB 500 Hz influence | its end speed (45, or 25 restricted) minus 1 m/s, where its curve ends (153 m from the magnet) |
+| PZB 1000 Hz influence | its end speed (85 km/h in programme O) minus 1 m/s, where the train gets in the time left (23 s from the magnet), with the planner's lead taken back |
 
 `a` is the planning deceleration (the game's comfortable figure), `t_lag` 2.5 s of travel for
-the brake to bite. Near a stand point the train creeps (1.5 m/s) until it is within 1.5 m, then
+the brake to bite. The protection's current restriction is a limit in force too. PZB's curves
+end lower than they look: the 1000 Hz one is parabolic in time and catches a train that
+follows it (`research/safety-systems-and-hud.md`), so the planner aims at each curve's end
+instead. Near a stand point the train creeps (1.5 m/s) until it is within 1.5 m, then
 the target is 0. With nothing known (no driver aid) the cap is 40 km/h.
 
 ### Power and brake (`servo`)
@@ -117,7 +123,13 @@ traction, coast, brake, hold (at a stand with target 0: 0.7 of full service). Tr
 loop on the measured acceleration (filtered speed derivative); the brake is feed-forward through
 an estimate of the train's full service deceleration (starts at 0.7 m/s², learned while
 braking) plus a PI correction. Levers slew (power +0.5/s, −1.5/s; brake +1.5/s, −0.8/s), and
-power and brake are never on together: each waits for the other to reach zero.
+power and brake are never on together: each waits for the other to reach zero. For 5 s after
+the brake comes off, traction ignores the deceleration the releasing brake still causes;
+counted as a shortfall, it wound the power to full and the train surged over a PZB curve's end.
+
+If PZB brakes the train anyway, power stays off. At a stand the train is readied again
+thoroughly, which presses PZB's "Frei". That recovery doesn't count against the three thorough
+readyings a train gets, unless it repeats within a minute.
 
 ### Stops, doors, departure (`stops`)
 
