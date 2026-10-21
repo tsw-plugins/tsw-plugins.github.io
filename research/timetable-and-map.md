@@ -4,7 +4,7 @@ description: >-
   Reading the player's service (stops, scheduled/expected/actual times, platforms, positions, distance to the next stop), the signal and speed limit ahead, and the route's stations for a map view: the classes, fields and functions, what is reachable from reflection, and what tsw-sdk implements.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-20T23:10+0200
-last_edited: 2026-10-20T23:45+0200
+last_edited: 2026-10-21T20:15+0200
 ---
 
 # Timetable and map reading (2026-10-20)
@@ -141,3 +141,43 @@ Driving the Fulda timetable's RB51-15500 (Frankfurt Hbf to Wächtersbach) with t
 - **Actor locations** (`K2_GetActorLocation` of the drivable or its root component) read 0,0,0.
   The camera (`PlayerCameraManager:GetCameraLocation()`) and the placement positions are in
   the same world frame.
+
+## Appendix: field offsets (build 886, 2026-10-21)
+
+From `CXXHeaderDump/TS2Prototype.hpp` (`ARouteTimetable` at line 10134, `ATS2AIController` at
+10625), collected for tsw-autopilot. The reader above looks fields up by name; these are for
+native code and for checking a dump of a new build.
+
+| Struct / class | Field | Offset |
+| :--- | :--- | :--- |
+| `ATS2PrototypeGameState` | `RouteTimetable` | 0x298 |
+| `ARouteTimetable` | `OnServiceInstructionArrived`, `…Completed`, `OnServiceStarted`, `OnServiceStopped` (delegates) | 0x228, 0x238, 0x248, 0x258 |
+| | `Definition`, `Services`, `ServiceIndexMap`, `ActiveServices` | 0x290, 0x298, 0x318, 0x558 |
+| `FRouteTimetableService` (0x150) | `Name`, `CurrentInstructionIndex`, `CurrentInstructionState` | 0x00, 0x24, 0x28 |
+| | `CompletedInstructions`, `CurrentPath`, `PathFollower` (its `DistanceOnPath` at +0x8) | 0x48, 0x58, 0x88 |
+| | `DriverPermissions`, `CurrentState`, `StartTime`, `EndTime` | 0xA4, 0xA5, 0xA8, 0xB0 |
+| | `AIDriver` (lazy pointer), `EstimatedLateness` | 0xC4, 0xE8 |
+| `FRouteTimetableInstructionState` (0x20) | `ArrivalTime`, `CompletionTime`, `AccumulatedTime`, `LateState`, `CompletionState`, `bForceEarlyCompletion` | 0x00, 0x08, 0x10, 0x18, 0x19, 0x1A |
+| `URouteTimetableDefinition` | `Services` | 0xF0 |
+| `FRouteTimetableServiceDefinition` (0x198) | `ServiceNumber`, `bIsPlayerDrivable`, `Instructions`, `ExpectedAIPerformance` | 0x30, 0x40, 0xA0, 0xB8 |
+| | `StartTime`, `MinDwellTime`, `ScheduledDwellTime` | 0xC0, 0xC8, 0xD0 |
+| | `MaxAcceleration`, `MaxComfortableDeceleration`, `TimetableDataTrack`, `ServicePath` | 0xF0, 0xF4, 0x120, 0x148 |
+| `FRouteTimetableServiceInstruction` (0x110) | `InstructionType` (GoTo 0, LoadUnload 1, Couple 2, Uncouple 3), `DestinationDisplayName`, `Destination` | 0x00, 0x08, 0x20 |
+| | `GoVias`, `GoToTolerance`, `ArrivalTime`, `CompletionTime`, `WaitingTime` | 0x48, 0x6C, 0x78, 0x88, 0x98 |
+| | `EarlyTolerance`, `LateTolerance`; bit bytes (`bIsStopping` …; `bUseStopMarkerPosition`) | 0xA0, 0xA8; 0xB0, 0xB1 |
+| `FStationDetail` | `DistanceToStationCM`, `PlatformLength`, `MarkerType`, `MarkerName` | 0x20, 0x24, 0x28, 0x30 |
+| `FTS2TrackData` | `Stations`, `Markers` | 0x20, 0x30 |
+| `FTS2DriverAidData` (0x118) | `DistanceToSignal`, `DistanceToNextSpeedLimit`, `Gradient`, `SignalAspectClass` | 0x04, 0x08, 0x0C, 0x10 |
+| | `SpeedLimit`, `NextSpeedLimit`, Track/Service/Formation max speed | 0x28, 0x2C, 0x34/0x38/0x3C |
+| | `NextSpeedLimits`, `NextSignals`, `NextSignalProperty`, `TrackRestrictionQuery` | 0x58, 0x68, 0x78, 0xA8 |
+| `UObjectiveActionMoveToComponent` | `bUseStopMarkerPosition`, `DestinationRibbonLocation`, `CachedStopAtPlacement` | 0x5F0, 0x654, 0x718 |
+| `UTS2GameHUDWidget` | `CurrentObjectiveAction` | 0x2D8 |
+| `ATS2AIController` | `ServiceName`, `bHasYardManagerPermission`, `MaxAccelerationMSS`, `PassAtDangerSignal`, `DrivingActor`, `TargetVelocity` | 0x350, 0x358, 0x35C, 0x36C, 0x3B4, 0x3D4 |
+
+`CompletionState`: Error 0, PendingOnDependency 1, InProgress 2, Arrived 3, Failed 4, Succeeded 5,
+ServiceCompleted 6. A stop's departure readiness is probably the move from Arrived to Succeeded
+together with `OnServiceInstructionCompleted` (no single "ready to depart" flag was found). The AI
+driver's behaviour tree (`Core/AI/BT_TS2AIController`) is a selector over ServiceShutdown,
+ServiceSetup, CouplerSetup, Couple, Uncouple, LockUnlockDoors, PropulsionChangeover and the driving
+sequence (`Task_RequestYardManagerPermissions`, `BTTask_AimForTargetVelocity`, gated by "using
+simple physics"); how it computes its target speed is in [native-code.md](native-code.md).

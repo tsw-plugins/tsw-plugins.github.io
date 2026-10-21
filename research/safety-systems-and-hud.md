@@ -6,7 +6,7 @@ description: >-
   times and stop positions. For tsw-autopilot.
 game_build: 886 (TSW 7)
 created: 2026-10-21T08:45+0200
-last_edited: 2026-10-21T08:45+0200
+last_edited: 2026-10-21T20:15+0200
 ---
 
 # Safety systems, the HUD interface and timetable internals
@@ -160,3 +160,119 @@ fully simulated player train to it is no way to an autopilot; tsw-autopilot driv
   Mode (supported locos only), AI Conductor Mode.
 - The Experienced/Expert preset turns every assist off and uses the minimal HUD.
 - No global "safety systems on" switch was found: PZB and Sifa are per loco and per service.
+
+## Reference: PZB and Sifa in the decompiled blueprints
+
+Detail behind the summaries above, from the 2026-10-21 analysis. Paths are under
+`tsw-decomp/out/TS2Prototype/Content/Core/RailVehicles/SafetyDevices/`; "UG" is the ubergraph and
+the numbers are bytecode offsets. Timings and speeds come from the class defaults, decoded from the
+raw `.uexp` because the decompiler printed floats as 0 (see
+[traction-locks.md](traction-locks.md#decompiler-caveat)).
+
+### PZB mode values (`PZB_ModeBase`, `_M`, `_U`; `_O` overrides nothing)
+
+| Limit | O | M | U |
+| :--- | :--- | :--- | :--- |
+| 1000 Hz vmax | 160 km/h | 120 | 100 |
+| 1000 Hz curve end (reduced) | 85 | 70 | 55 |
+| 500 Hz limit | 65 | 55 | 40 |
+| 500 Hz reduced | 45 | 35 | 25 |
+| 1000 Hz reduction time | 23 s | 29 s | 38 s |
+
+The same for all modes: 2000 Hz limit 40 km/h; Befehl (override) valid below 45; restricted
+1000 Hz 45 and restricted 500 Hz 25; restriction activation below 10 km/h; startup activation
+5 km/h, startup limit 45. Times: acknowledge 4 s, restriction 15 s, overspeed 7 s. Distances:
+1000 Hz release 700 m, 1000 Hz end 1250 m, 500 Hz 250 m (reduced 153 m), startup 550 m. V3 class
+defaults: overspeed allowance 5 km/h, activation speed 5 km/h. `ModeList` keys 3 = O, 2 = M, 1 = U;
+mode 0 means off. The enforced limit comes from the curve assets `PZB_Curve_O/M/U` (R: the 1000 Hz
+limit over seconds, G: the 500 Hz limit over distance, B: restrictive, A: restriction activation).
+
+### What brakes, in `PZB_Service_V3` (`EMERGENCY(true, type)`)
+
+| Type | Trigger | Where |
+| :--- | :--- | :--- |
+| 3 | a 500 Hz magnet outside a 1000 Hz influence | UG 9828 → 10122 |
+| 2 | 1000 Hz not acknowledged within 4 s; also sets restrictive mode | timer UG 6849–6974, fires 10851 → 10815 |
+| 1 | a 2000 Hz magnet unless Befehl is held and speed ≤ 40 km/h | `RecieveFrequency` 1663–1865 |
+| (current) | over the active influence's curve, at once, no grace | `UPDATE_INFLUENCE` 1471–1696 → 2839 |
+| 0 | more than 7 s above vmax + allowance ("forced brake", clears itself below vmax) | UG 7756–7881, `Overspeed_Time` 100 |
+
+- `Get_Influence_MaxSpeed` (1703) picks reverse → restricted → 2000 Hz → 500 Hz → 1000 Hz.
+- Restrictive mode only lowers the limit (curve B). It starts after 15 s below curve A, or
+  **at once when the train stops (< 0.1 m/s) inside an influence** (`CheckRestriction_Speed`
+  122–170), and ends at the terminate distance.
+- The startup programme is armed by `Update_ReverserState` (451–470) when the reverser goes to
+  forward and enforced through the curve.
+- `EMERGENCY` (1452) acts only on a change, calls `SetEmergency` / `ClearEmergency` of
+  `SafetyDeviceBase` and broadcasts `OnEmergencyChanged`.
+- Release (`Release()` 514–705): with an emergency, only a stand within ±0.1 m/s is required.
+  Without one it clears a 1000 Hz influence after 700 m. Type 0 clears itself below vmax (UG
+  11468–11589). Turning PZB off also clears it.
+- **`Acknowledge()` and `Release()` act on the falling edge** (button let go); on the rising edge
+  they only notify clients. `Override()` acts on both edges and makes Befehl valid while held below
+  45 km/h.
+- V3 never reads its `_Acknowledge` / `_Release` / `_Override` / `_Reverser` VirtualHID fields: the
+  loco pushes events in (`PZB_Acknowledge`, `PZB_Release`, `PZB_Override`, `PZB_SetDirection`,
+  `PZB_SendFrequency`, `PZB_SetActiveState`, `Set_IsLZBActive`). `PZB_SetPowerState` and
+  `PZB_GNTEntry` are empty. Magnets are ignored unless enabled, mode ≠ 0, active and not
+  suppressed.
+- Neither PZB nor Sifa ever calls `SetPowerInfluence`: they brake, they do not cut traction.
+- **V2** has the same emergency paths, values and edge rules (offsets shifted). It lacks GNT
+  suppression, debug mode and mode changes at runtime; its `bIsPZB_Active` is `bIsReady &&
+  !bIsLZB_Active`, and LZB activation does not clear an emergency.
+
+### Sifa as the BR 110 uses it (`WarningDevices/BP_Sifa_Service`)
+
+Class defaults (the BR 110's instance overrides none): split visual and audible warning,
+`DurationBeforeWarning` 30 s, `DurationBetweenVisualAndAuditory` 2.5 s, `DurationBeforeEmergency`
+5 s (so the penalty comes 35 s after the last reset), distance variants 900 m and 75 m,
+`MinimumSpeedThreshold` 1.34112 m/s, `IgnoreDeadmansBrakeEnforcment` true,
+`DoesPedalClearPenaltyBrake` true, `PedalEmergencyDelay` 8 s. Sifa types: 0 time-based (default),
+1 time then 75 m steps, 2 900 m then 75 m steps, 3 random 30–50 s. Active only when cut in, enabled
+and above the speed threshold; going inactive clears warning and penalty, except that speed is
+ignored while a penalty is on. A pedal press or `WarningDevices_Acknowledge` clears warning and
+penalty and restarts the timer; releasing or holding the pedal does nothing. The older `Sifa_C`
+(pedal hold/release timers) is a different device, not used by the BR 110. The native
+`USifaBaseComponent` is a third one; see [native-code.md](native-code.md).
+
+### How the BR 110 wires them (`LFR_DB_BR110/…/RVM_LFR_DB_BR110_399`)
+
+- Components `PZB_Service : PZB_Service_V3_C` and `Sifa_Service : BP_Sifa_Service_C`.
+- `PZB_Acknowledge_F/B`, `PZB_Release_F/B`, `PZB_Override_F/B` (identifiers `PZB_Acknowledge`,
+  `PZB_Release`, `PZB_Override`) pass `NewValue > 0.5` (UG 34954–35789). The B-cab acknowledge
+  handler passes the **old** value (UG 35114), so from cab B an acknowledge would land one change
+  late (a possible game bug, by reading only).
+- The mode lever `PZB_Mode_B` positions 0/1/2 set U/M/O (UG 35835–35959), but nothing calls
+  `SET()`, so a change probably applies only at the next PZB enable [inferred].
+- Enable: PZB = fuse `SignallingSystems` > 0.4 and battery; Sifa = fuse `WarningDevices` > 0.4,
+  battery and a single active cab.
+- Sifa reset buttons `SifaReset_L/R_F/B`, `SifaResetDesk_F/B` (identifier `Alerter`): any value
+  change acknowledges, if that cab's jumper cable is master (UG 10614–11144). The pedals
+  `SifaResetPedal_F/B` follow seat occupancy.
+- On a PZB emergency, Sifa penalty, LZB emergency or the emergency handle, `UpdateLocalEmergencyState`
+  opens `Simulation.EmergencyValve` (vents the pipe). A type-0 forced brake raises the train-brake
+  valve to at least 0.4 instead (`UpdateTrainBrakeLocal`), which also latches the traction lock
+  ([traction-locks.md](traction-locks.md)).
+- `ResetSafetySystems` (UG 13448–15784) pushes `SifaResetDesk` while Sifa is active and moves
+  `PZB_Acknowledge` while an unacknowledged influence is active: the game's own model of an
+  automatic acknowledge.
+
+## Web sources (2026-10-21)
+
+Community statements on PZB, Sifa and the BR 110 that the decompiled code above confirmed or
+corrected; two Dovetail support pages (the Linke Rheinstrecke gameplay guide and "Settings
+Explained") returned 403/404 and were read only as search summaries.
+
+- BR 110 route and roadmap: https://profile.dovetailgames.com/live/train-sim-world/articles/article/tsw-roadmap-march-2023
+  (the BR 110.3 comes with Linke Rheinstrecke: Mainz–Koblenz; "LFR" matched only a community
+  timetable mod's name, so it is probably the community's abbreviation, unverified)
+- Gameplay guide: https://support.dovetailgames.com/hc/en-us/articles/28572762053010-Linke-Rheinstrecke-Mainz-Koblenz-Gameplay-Guide
+- Breaker trips under too much power: https://forums.dovetailgames.com/posts/691148/
+- Settings and presets: https://support.dovetailgames.com/hc/en-us/articles/28572764655122-Train-Sim-World-Settings-Explained,
+  https://support.dovetailgames.com/hc/en-us/articles/35574942592658-How-to-set-up-Train-Sim-World
+- Expert locos: https://live.dovetailgames.com/live/train-sim-world/articles/article/db-br-145-expert-out-now,
+  https://live.dovetailgames.com/live/train-sim-world/articles/article/db-br-101-expert-out-now
+- PZB as players describe it: https://flyawaysimulation.com/ask/answers/use-pzb-train-sim-world/,
+  https://forums.dovetailgames.com/posts/471856/ (hold Befehl past a 2000 Hz magnet),
+  https://forums.dovetailgames.com/posts/576255/, https://forums.dovetailgames.com/threads/what-is-wrong-with-the-db-401.68503/
+- Sifa cycles on the Vectron (user reports): https://forums.dovetailgames.com/posts/953530

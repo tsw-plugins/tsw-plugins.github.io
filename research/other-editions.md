@@ -4,7 +4,7 @@ description: >-
   Running uniloader and the TSW plugins on other Train Sim World editions: TSW 5 checked statically and in game, what differed (menu look, Steamworks version, hard-coded "7"s) and what was changed, what is still untested.
 game_build: 886 (TSW 7, Steam build 25890949); TSW 5 Steam build 21051341
 created: 2026-10-18T22:55+0200
-last_edited: 2026-10-18T22:55+0200
+last_edited: 2026-10-21T20:15+0200
 ---
 
 # Other editions: Train Sim World 5 (2026-10-18)
@@ -24,6 +24,34 @@ differences were cosmetic or a hard-coded "7", and those are fixed now.
 - Missing: `DialogButton_C.UseCustomColors`, which tsw_ui already treats as optional.
 - The game ships `steam_api64.dll` from Steamworks 1.47 (TSW 7: 1.52). That version lacks the
   per-interface accessors such as `SteamAPI_SteamFriends_v017`.
+
+### Details of the static check
+
+Done without launching anything. The scanners lived in a session scratch directory that is gone;
+they are described here so they can be rebuilt.
+
+- **Tools:** a Linux build of the patternsleuth revision tsw-sdk-host pins (`8bcbd437`), running
+  the real resolvers on the exe file; Python scripts that count our byte patterns and read UE 4.26
+  reflection metadata (class, parameter layout, property offsets, struct sizes); a pak lister and
+  extractor. The paks of both editions are unencrypted, zlib only.
+- **Install:** TSW 5 6.4 GB, no `Content/DLC`. Both exes report `++UE4+Release-4.26-CL-0`; neither
+  has a `Build.version` file. 3420 native classes in TSW 5 against 3463 in TSW 7 (TSW 7 adds 46,
+  mostly SimpleControls HUD and credits).
+- **ProcessEvent slot 67** confirmed statistically: the same function sits in slot 67 of about 500
+  of the ~1300 vtables in each exe, with an identical prologue. `UGameEngine::Tick` is slot 85 in
+  both.
+- **Expected TSW 5 RVAs** (then confirmed by the in-game scan): `GUObjectArray` 0x5150478,
+  `FName::ToString` 0x159c640, `FName::FName(wchar)` 0x158e8e0, `GMalloc` 0x510e128, `GEngine`
+  0x5284b98, `UGameEngine::Tick` 0x2c2ef20, `ProcessEvent` 0x176feb0.
+- **Same layouts:** HUD stacks `MainWidgetStack` / `OverlayWidgetStack` / `DialogWidgetStack` at
+  0x420/0x430/0x440; `FWidgetInfo` 0x10, `FSlateFontInfo` 0x58, `FCompressedReskin` 0x18,
+  `FInputActionKeyMapping` 0x28, `FKey` 0x18, `FFarVector` 0x18; the `UObject`, `UStruct` and
+  `FField` layouts.
+- **Game fields that moved** (all looked up by name at runtime, so harmless): `SplashScreenData`
+  0x2a0 vs 0x2a8, `CurrentScenario`, `VehicleSide`.
+- Input mappings for photo mode (Shift+Space) and jump (Space) are identical; TSW 5 imports the same
+  four `dwmapi.dll` functions as TSW 7.
+- TSW 4 and TSW 6 were not installed in any library.
 
 ## In game
 

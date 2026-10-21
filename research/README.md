@@ -4,7 +4,7 @@ description: >-
   Index of the Train Sim World 7 research notes: the game's internals, interfaces into the running game, driving trains from code, UE4SS pitfalls, sessions, avatars, ghosts, performance, plus the early studies (loader comparison, prior art, community findings).
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-17T11:59+0200
-last_edited: 2026-10-21T08:45+0200
+last_edited: 2026-10-21T20:15+0200
 ---
 
 # Research notes ("Erkenntnisse")
@@ -31,6 +31,16 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [game-state-journal.md](game-state-journal.md) | The game state journal and crash reports, and the start-up skip |
 | [safety-systems-and-hud.md](safety-systems-and-hud.md) | PZB 90 and Sifa as the game implements them (decompiled), the HUD interface every train has (tractive force, traction lock, gauges), timetable departure times and stop positions, the game's AI driver |
 | [timetable-and-map.md](timetable-and-map.md) | The player's service (stops, times, platforms, positions), the signal and speed limit ahead, the route's stations for a map: what is reachable, tsw-sdk's `timetable` reader |
+| [ebula.md](ebula.md) | EBuLa, the German cab timetable display: the real system and Ril 408, other simulators and fan tools, how TSW 7 implements its EbuLa screens (decompiled) |
+| [ready-any-train.md](ready-any-train.md) | Readying any train from code: a survey of every TSW 7 train's controls, control families and named positions, the class-independent ready loop, results per class |
+| [traction-locks.md](traction-locks.md) | Why power gives no force: the latched traction locks of the BR 110 (simulation graph), BR 143 (AFB speed selector) and Class 323, the native converter gates, start sequences (decompiled) |
+| [timetable-mode-start.md](timetable-mode-start.md) | Starting timetable mode with a chosen service from code: the drive-mode settings the menu writes, the native conditions at world start, the start card that pauses the game |
+| [native-code.md](native-code.md) | Reading the game's code: blueprint decompiling (repak, kdecomp) and headless Ghidra; the simulation graph API, lever ticks, brake valves, traction gates, native Sifa, the AI driver's target speed; rea ruled out |
+| [dtg-http-api.md](dtg-http-api.md) | Dovetail's HTTP API reference: routes, nodes, writes, function calls, VirtualRailDriver, subscriptions, measured latency, the RailDriver path behind it |
+| [community-tools.md](community-tools.md) | Community tools that read or drive TSW from outside (maps, controller bridges, Arduino cabs, RailDriver DLL replacements, UE4SS mods) and what they learned |
+| [input-injection.md](input-injection.md) | How player input reaches cab controls, injecting input in the process, letting the game do the work (AI takeover, presets), OS-level input under Proton/Wayland |
+| [connectivity.md](connectivity.md) | Background for hosted sessions: NAT traversal and success rates, iroh in detail, server query and listing protocols, browser limits, OpenOMSI's implementation |
+| [pure-rust-game-dll.md](pure-rust-game-dll.md) | Can a UE4SS mod be Rust only? Options, existing projects, effort; the study behind the pure-Rust game DLL |
 | [scenarios.md](scenarios.md) | How scenarios are built (objective actions, composer, failures), the scripted events of the 29 installed scenarios, the random fault system, and what tsw-autopilot needs to complete them |
 | [progression.md](progression.md) | Where tutorial, task, mission and completion progress lives; tsw-unlock's buttons |
 | [mod-sync.md](mod-sync.md) | Bringing guests the host's mod version, config and data-only content (liveries) |

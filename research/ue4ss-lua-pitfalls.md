@@ -4,7 +4,7 @@ description: >-
   UE4SS Lua rules that crash the game when broken: the async thread, NULL object wrappers, timers.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-17T11:59+0200
-last_edited: 2026-10-17T11:59+0200
+last_edited: 2026-10-21T20:15+0200
 ---
 
 # UE4SS Lua pitfalls that crash TSW 7
@@ -73,3 +73,25 @@ Crash: `dumps/tsw7-886/experiments/crash-null-uobject-getclass/` (probe read
 - Mod reload: `RestartCurrentMod()` / `RestartMod(name)` (bridge: `tswcmd reload [mod]`). Ctrl+R via
   the GUI is unreliable. UE4SS drops a restarted mod's delayed actions.
 - Lua 5.4: no `setfenv`; give `load` the environment as its 4th argument.
+
+## 5. Out-parameters, arrays, interfaces, delegates (2026-10-17, read from source, partly verified)
+
+From the UE4SS source at the installed commit `06474186` (`external/RE-UE4SS`), while preparing
+the input and automation probes ([input-injection.md](input-injection.md)):
+
+- **Out-parameters come back under the parameter's name** in the table passed in, not by position
+  (`LuaUObject.cpp:256-290`): `dir.OutLocalSpawnDir`, not `dir[1]`. The bridge's spawn code read
+  `dir[1]`, so the spawn direction was always Forwards (confirmed in game, see
+  [interfaces.md](interfaces.md)). This is probably also the real cause of "float out-parameters
+  come back 0" in section 4.
+- **Reading a `TArray` past its end grows it** (zero-filled; `LuaTArray.cpp:243-249`). Iterate with
+  `ForEach`, never with an index loop that may overshoot.
+- **Never pass an interface-typed parameter from Lua.** UE4SS fills in only half of an interface
+  value (`LuaUObject.cpp:1846-1875`), so calls like `TaskMoveLeverToInputPosition` or
+  `TaskPushOrToggleButton`, whose owner parameter is an interface, almost certainly crash. Call them
+  from native code.
+- **Delegates are reachable:** `GetBindings`, `Broadcast`, `Add` and `Remove` on a delegate property
+  (`LuaXDelegateProperty.cpp:150-290`). `GetBindings` names the function bound to a game delegate,
+  which is the one to hook (verified in game).
+- **Probe state has to go into `_G`:** the bridge gives each `eval` its own environment, so a plain
+  global set in one run is invisible in the next (verified).
