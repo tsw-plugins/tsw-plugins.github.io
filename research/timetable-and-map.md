@@ -101,3 +101,43 @@ widget's name and description (05 §driving).
   DistanceToNextSignal, NextSignalPosition }`), same units assumed, *unverified*; empty when the
   element structs are missing or the JSON comes from an older adapter. `Reader::track_ahead(pc)`
   reads the stations and markers ahead alone (one `GetTrackData` call).
+
+## Station stops, measured (RB51-15500, TSW 7, 2026-10-21)
+
+Driving the Fulda timetable's RB51-15500 (Frankfurt Hbf to Wächtersbach) with tsw-autopilot:
+
+- **A stop is two instructions.** A nameless `GoTo` to the platform marker (`Frankfurt (Main)
+  Sued Pl 6`), then a `LoadUnload` named after the station (`Frankfurt(Main)Süd`, platform 6,
+  arrival and departure times). The service's first instruction is the origin's boarding:
+  nameless, `Upcoming` before the service's start time, then `Current`.
+- **The game's stop test.** Each `GoTo` has an `ObjectiveActionMoveToComponent` (owned by the
+  scenario manager), with `DestinationTrackMarker.ReferenceName` set to the GoTo's marker. Its
+  settings are `ConditionTest = Within`, `ConditionTolerance = 1000` (cm),
+  `bFailOnDestinationPassedThrough`, `bUseStopMarkerPosition` and `bCheckForStoppingOnTrackMarker`.
+  `CachedStopAtPlacement` holds `FormationLength` and one `VehiclePlacement` per vehicle.
+- **A stop the train runs through** is marked `Done` with the actual arrival equal to the actual
+  departure (Hanau Hbf: 04:54:54/04:54:54 for 04:59/05:00). The service then simply goes on.
+- **Track items (`GetTrackData`).** A station-wide item (`Hanau Hbf []`, no marker name) gives
+  the distance to the platform's near end. Once the front is inside the platform, it gives the
+  far end instead. A platform marker (`Hanau 7 [Hanau Hbf Bstg 7]`) gives the distance to the
+  marker range's *start*, which depends on the direction of travel:
+  - When the platform runs against the train, that start is the far end. At Hanau the marker
+    read 932 m and the station item 624 m, with the platform 308 m long.
+  - When the platform runs with the train, both items read the same, the near end (Rodenbach:
+    7195 m and 7195 m).
+
+  A marker one platform length beyond a station-wide item of the same length is therefore
+  reversed. Inside the platform both items read the far end, so the two cases can't be told
+  apart there.
+- **Where to stop.** The HUD's distance, `UTS2HUDObjectiveWidget::GetDistanceToObjective(float&)`
+  in cm, is the straight-line distance from the camera to the objective's
+  `GetStopAtPlacementCetrePosition()`. It points to where the front should halt, a few metres
+  short of the platform's far end: 804 m at Hanau Wolfgang, with the platform 599–811 m ahead.
+  Only the HUD's own widget instances answer; the class templates return `false`.
+  - The distance has no sign and is measured from the cab, metres above the rail. Near the
+    marker it stops shrinking, and once the marker is passed it grows again.
+  - tsw-autopilot reads it while it is more than 50 m away and runs the rest down by the distance
+    travelled.
+- **Actor locations** (`K2_GetActorLocation` of the drivable or its root component) read 0,0,0.
+  The camera (`PlayerCameraManager:GetCameraLocation()`) and the placement positions are in
+  the same world frame.
