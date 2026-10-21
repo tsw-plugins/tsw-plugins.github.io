@@ -142,6 +142,27 @@ sets the cruise control's target speed (output 0 "Ein", then "{TargetSpeed} km/h
 input 0.3 is 30 km/h, 0.6 is 70 km/h) and the loco drives to it by itself, braking
 electrically too (0.3 held ~33 km/h with negative tractive effort, 2026-10-21).
 
+### Irregular levers describe their own travel
+
+`UIrregularLeverComponent` (most cab levers) has two reflected arrays:
+
+- `Notches` (`FIrregularLeverNotch`: `MinimumInputValue`, `MaximumInputValue`, `bBlocker`):
+  where the lever stays. A set between notches snaps to one on the next ticks (BR 146 brake
+  0.61 to 0.575; the Class 66 automatic brake moved far enough over several ticks that the
+  autopilot took it for the player's hand).
+- `ValueMap` (`FIrregularLeverValueMapping`: `InputValue`, `OutputValue`,
+  `LinearOutputValueInterval`): input to output. With it a named output position becomes an
+  input range without moving the lever; sweeping the BR 143's speed selector through its
+  range and back in one frame left its cruise control not driving.
+
+tsw-sdk `cab::lever` puts values where a lever stays and maps outputs to inputs. How the game
+interpolates the map and picks the notch is inferred, to be checked against
+`GetCurrentOutputValue` in the game.
+
+Not every power lever holds a position: the BR 363's `Throttle_L` names its outputs
+"Leerlauf", "Füllen/Herunterfahren" and two more, a control held to raise or lower power. The
+autopilot cannot drive it yet.
+
 ## Gotcha: one spawned train per Free Roam session
 
 Boarding a second spawned train ends the Free Roam session: the game opens
