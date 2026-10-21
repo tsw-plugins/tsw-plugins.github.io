@@ -4,7 +4,7 @@ description: >-
   Index of the Train Sim World 7 research notes: the game's internals, interfaces into the running game, driving trains from code, UE4SS pitfalls, sessions, avatars, ghosts, performance, plus the early studies (loader comparison, prior art, community findings).
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-17T11:59+0200
-last_edited: 2026-10-20T23:10+0200
+last_edited: 2026-10-21T08:45+0200
 ---
 
 # Research notes ("Erkenntnisse")
@@ -29,6 +29,7 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [avatars.md](avatars.md) | Bodies for other players: a plain Character dressed from the modular character meshes, animation assets |
 | [other-editions.md](other-editions.md) | Train Sim World 5: everything loads and works; what differed (menu look, Steamworks 1.47, hard-coded "7"s) and the fixes |
 | [game-state-journal.md](game-state-journal.md) | The game state journal and crash reports, and the start-up skip |
+| [safety-systems-and-hud.md](safety-systems-and-hud.md) | PZB 90 and Sifa as the game implements them (decompiled), the HUD interface every train has (tractive force, traction lock, gauges), timetable departure times and stop positions, the game's AI driver |
 | [timetable-and-map.md](timetable-and-map.md) | The player's service (stops, times, platforms, positions), the signal and speed limit ahead, the route's stations for a map: what is reachable, tsw-sdk's `timetable` reader |
 | [progression.md](progression.md) | Where tutorial, task, mission and completion progress lives; tsw-unlock's buttons |
 | [mod-sync.md](mod-sync.md) | Bringing guests the host's mod version, config and data-only content (liveries) |
