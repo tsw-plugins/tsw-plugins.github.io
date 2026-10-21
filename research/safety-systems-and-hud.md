@@ -40,6 +40,32 @@ power at once trips the BR 110's main breaker. To recover, set the tap changer t
 breaker, and notch up again slowly (around 40 kN). tsw-autopilot now notices "power, no force" after
 3 s, re-readies the train and caps its power at 3/4 of where it was cut.
 
+## BR 110: its traction lock, decoded and measured
+
+Decoded from the simulation graph (`SA_LFR_DB_BR110_W29t`), then sampled at 1 Hz with
+`lockwatch110.lua` while the autopilot drove (2026-10-21):
+
+- **Run-down:** `ForceRunDown` = breaker without supply, dynamic brake > 0, train-brake handle > 0,
+  reverser at 0, emergency-off pressed, or brake pipe < 2.5 bar. While it holds, the tap changer
+  runs down.
+- **The latch:** `TractionLock` = `(lock && !Nullstellung) || ForceRunDown`. Once set, it clears
+  only at Nullstellung: throttle at 0 **and** tap 0. A driver who keeps power up never gets it back.
+- **The throttle** is a target tap (0–28, 0.4 s per tap). Above 3395 A the breaker trips.
+- **The brake handle as the graph sees it** (`AutoAirBrakeValve.HandlePosition`) is updated only
+  by the levers' change events. Released straight to "Fahrend", it kept the last notch passed
+  ("Abschluss", 0.2), which is a handle > 0, so the lock held. Released through "Lösen" (fill), it
+  keeps −1, which is harmless.
+- **The dynamic brake lever is coupled** to the train brake. Leaving "Lösen" for "Fahrend" moves it
+  to about 0.05 for a moment, which runs down and latches the lock if power is up.
+
+**What tsw-autopilot does:**
+- It reads the lock through `HUD_GetIsTractionLocked` and keeps power at idle while it is locked.
+- It releases the brake through its fill position every time.
+- It gives no power while the brake fills.
+- If a lock outlasts 3 s at idle, it releases the brake once more.
+
+The Class 323 (`TR_ThrottleIdle`) and the BR 143 (AFB reset) latch their locks the same way.
+
 ## PZB 90 (`PZB_Service_V3`, V2 is the same in what matters)
 
 - **Forced brakes:**
