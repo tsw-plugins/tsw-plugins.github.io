@@ -88,6 +88,31 @@ The Class 323 (`TR_ThrottleIdle`) and the BR 143 (AFB reset) latch their locks t
   - `PZB_GetRestrictionMaxSpeed` (m/s);
   - `PZB_GetDataStruct` (the active influence, its speed limit in km/h).
 
+### The braking curves, measured (BR 146 + Dosto, RB51-15500, 2026-10-21)
+
+The component's `ActiveInfluence` (`PZB_InfluenceProgram`, a Blueprint struct whose members
+carry their GUIDs in their names) holds what a driver needs to stay under the curves:
+
+| Member | Type | Meaning |
+| :--- | :--- | :--- |
+| `1000Hz_Active_93_…` | bool | a 1000 Hz influence is in force |
+| `1000Hz_Time_64_…` | int | whole seconds since its magnet (0 to 24) |
+| `500Hz_Active_87_…` | bool | a 500 Hz influence is in force |
+| `500Hz_Distance_67_…` | int | metres since its magnet, counted in 17 m steps up to 153 |
+| `SpeedLimit_70_…` | int | the curve's end speed, km/h (85 in programme O, 45 after 500 Hz, 25 restricted) |
+| `isRestricted_43_…` | bool | restrictive mode |
+| `isEmergency_52_…` | bool | a forced brake is on |
+
+- **The 1000 Hz curve is parabolic in time.** In programme O it falls from 165 to 85 km/h in
+  23 s: slowly at first, then about 0.3 km/h per second faster each second (164.9 after 1 s,
+  139.7 after 13 s, 91.9 after 22 s). A train that follows the curve is caught at its end. A
+  straight fall from the magnet to just under the end speed always lies under it.
+- **The 500 Hz curve is a constant deceleration over distance.** Restricted, it falls from 45 to
+  25 km/h over 153 m (v² linear in distance: 37.8 km/h at 68 m).
+- Each emergency we saw came from crossing a curve's end by a few tenths of a km/h: 85.1 under
+  85, 25.4 under 25. The forced brake then put PZB into restrictive mode and needed "Frei" at a
+  stand.
+
 ## Sifa (`BP_Sifa_Service` on the BR 110)
 
 - **The cycle:** a visual warning 30 s after the last reset, the alarm 2.5 s later, and the penalty
