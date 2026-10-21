@@ -4,7 +4,7 @@ description: >-
   Making any train ready to drive from code, for tsw-autopilot's auto-ready: a survey of every TSW 7 train's controls, what the game offers (presets, service setup), the class-independent check-and-fix loop and its results per class.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-21T01:40+0200
-last_edited: 2026-10-21T01:40+0200
+last_edited: 2026-10-21T10:45+0200
 ---
 
 # Ready any train (2026-10-21)
@@ -188,6 +188,33 @@ Fulda Free Roam, 2026-10-21. Prototype = `generic.lua`; Rust = the autopilot's o
 | Class 323 (TTC) | locked `InEmergency` | ready 5 s (handle to neutral); barely moves (open) |
 | BR 363 | ready, no motion | ready 7 s (engine started); handed back "you moved the power" (open) |
 | BR 411, 423, 430, 103, 110 | ready, moved (first run) | — |
+
+### Retest, 2026-10-21 morning (realism on: Expert assists, safety systems on)
+
+TSW 7 on Fulda Free Roam (each train from the same spawn, a red signal ahead), and TSW 5 on the
+Training Centre (its only route installed), with the autopilot's own readying:
+
+| Class | TSW 7 | TSW 5 |
+| --- | --- | --- |
+| BR 146 (TTC) | — | ready 3 s; held 38 km/h under the 40 limit |
+| BR 146 (FTF) | drove, stopped short of the red signal | — |
+| BR 103 | drove 37 km/h, stopped short of the red signal (in view) | — |
+| BR 110 | drove 64 km/h, stopped at red (after the traction-lock fixes in [safety-systems-and-hud](safety-systems-and-hud.md)) | — |
+| BR 442 | drove, stopped short of the red signal | — |
+| BR 363 | drove 26 km/h, stopped short of the red signal | — |
+| Class 66 (TTC) | drove, stopped short of the red signal | ready 8 s (engine start); 38 km/h |
+| Class 323 (TTC) | ready, then only 2.4 km/h at full power (retest pending) | locked `LowMainResPressure` until the compressor charged the main reservoir: now waited for, ready after 103 s, drove 96 km/h |
+| 766 Dosto + BR 146 (TTC) | accelerating at the end of the run | 103 km/h |
+
+**Class 323, cold:** its traction lock holds `LowMainResPressure` until the main reservoir is
+above 6.7 bar (it sets below 6.2). The compressor sits on the middle car (PTS) and runs while its
+collector has supply; from empty it needs well over the 30 s readying used to wait for a lock.
+tsw-sdk reads a lock manager's `LockConditions` (`TSet<FName>`) and waits up to 180 s while one
+is a pressure. A set driver's reminder appliance (`DRA_Switch`, UK) also locks traction; readying
+switches it off.
+
+**TSW 5 differs** in one call the autopilot uses: `RailVehicleComponent::GetDoorSidesForDoorLockState`
+has no `bWholeFormation` there. tsw-sdk takes either layout.
 
 A Free Roam session also ends when a spawned train rolls back into the player's own
 (the 143 with released brakes and no force, on a gradient).
