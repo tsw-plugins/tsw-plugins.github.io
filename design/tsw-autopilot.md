@@ -26,15 +26,20 @@ While the player switches it on, the autopilot drives the player's train over th
   ahead, braking in time for each;
 - works the reverser, power and train brake through the game's own controls
   (`VirtualHIDComponent` input, like the player's keys), and the doors at stops;
-- hands back to the player on any manual input on those levers, or when switched off.
+- hands back to the player on any manual input on those levers, or when switched off;
+- **readies the train first** (setting "Autopilot readies the train", on by default): keys
+  in, battery, pantograph up and breaker closed or the diesel started, reverser forward, train
+  and dynamic brake released to their running positions, parking brake released, a combined
+  handle out of emergency. Class-independent: controls are found by name family and by their
+  input identifier, positions by the names the cab gives them
+  ([research/ready-any-train](../research/ready-any-train.md)).
 
 Owner's purposes: a **test driver for tsw-coop** (long, reproducible runs without a human at
 the controls) and a **feature**. In tsw-coop it drives the **host's** train in singleplayer
 and multiplayer alike; a guest who drives the host's seat must not fight it (see
 [tsw-coop](#tsw-coop)).
 
-Not goals (yet): making a cold train ready (battery, pantograph, breaker; the drive
-toolkit's `drive_ready.lua` does that per class and is a separate piece), safety systems
+Not goals (yet): safety systems
 (Sifa, PZB, AWS/TPWS acknowledgement), coupling and uncoupling instructions, reversing at a
 terminus, driving in Free Roam to a destination.
 
@@ -236,10 +241,9 @@ To run in game (by the coordinator; nothing was deployed):
   device (Sifa), and how PZB/AWS restrictive magnets are acknowledged. Without that a long run
   ends in an emergency brake; the autopilot then hands back as stalled (25 s later), but it
   does not recognise or reset a penalty brake.
-- **Classes**: only BR 146 and Class 323 have known lever positions; others use their ranges
-  (reverser left alone, brake from the range minimum to 80 %). Self-lapping and graduated
-  brakes, and steam regulators, are untested.
-- **Reverser key**: BR 146 needs `ReverserHandle_F` in; the autopilot does not insert it (a
-  cold train is the player's, or `drive_ready.lua`'s).
+- **Classes**: BR 146 and Class 323 have known lever positions; for the others readying
+  hands over the brake's named running and the reverser's named forward position where the
+  cab names them, else the ranges are used (brake from the range minimum to 80 %).
+  Self-lapping and graduated brakes, and steam regulators, are untested.
 - The train's direction relative to the cab is not checked: a train standing with the reverser
   backwards on an unknown class would drive backwards with the driver aid of the wrong end.
