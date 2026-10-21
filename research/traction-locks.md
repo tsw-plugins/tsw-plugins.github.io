@@ -207,8 +207,9 @@ active. *When* a safety system isolates traction is decided in blueprints, as ab
 `kdecomp` printed every plain float in component templates and class defaults as 0 (lever value
 tables, notches, `MaximumOutputValue`, `MaximumTractiveEffort`). The fault is in the default case
 of `Value()` in `tsw-decomp/tools/kdecomp/Program.cs`. Values marked [raw] were read from the
-`.uexp` files with throwaway parsers. As of 2026-10-21 afternoon this was not fixed; check before
-trusting floats in other decompiled files.
+`.uexp` files with throwaway parsers. Fixed the same evening (Float/Double/Byte properties are
+not `PropertyData<T>`, so `RawValue` gave the default) and all outputs regenerated; see
+[fsn-push-pull-traction.md](fsn-push-pull-traction.md).
 
 ## Open
 
