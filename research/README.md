@@ -31,6 +31,7 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [game-state-journal.md](game-state-journal.md) | The game state journal and crash reports, and the start-up skip |
 | [safety-systems-and-hud.md](safety-systems-and-hud.md) | PZB 90 and Sifa as the game implements them (decompiled), the HUD interface every train has (tractive force, traction lock, gauges), timetable departure times and stop positions, the game's AI driver |
 | [timetable-and-map.md](timetable-and-map.md) | The player's service (stops, times, platforms, positions), the signal and speed limit ahead, the route's stations for a map: what is reachable, tsw-sdk's `timetable` reader |
+| [scenarios.md](scenarios.md) | How scenarios are built (objective actions, composer, failures), the scripted events of the 29 installed scenarios, the random fault system, and what tsw-autopilot needs to complete them |
 | [progression.md](progression.md) | Where tutorial, task, mission and completion progress lives; tsw-unlock's buttons |
 | [mod-sync.md](mod-sync.md) | Bringing guests the host's mod version, config and data-only content (liveries) |
 | [ue4ss-cpp-toolchain.md](ue4ss-cpp-toolchain.md) | Historical: building a UE4SS C++ mod on Linux without MSVC |
