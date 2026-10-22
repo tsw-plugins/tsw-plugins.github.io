@@ -1,10 +1,10 @@
 ---
 name: signaller-red-exit-signal
 description: >-
-  Why tsw-autopilot waited 2.5 hours at Wiesbaden Hbf's red exit signal (FSN RB75-28701, runs 27 and 29), how TSW 7 lets a driver contact the signaller (cab radio BP_SimpleRadio, the HUD's "Request pass signal", ADispatcher::RequestPassSignalAtDanger and its 18 answers), what the autopilot now does about it, and the two follow-on faults of run 29: the train crept into the PZB 2000 Hz magnet as its brake leaked off, and readying left the Dosto cab car's traction latched.
+  Why tsw-autopilot waited 2.5 hours at Wiesbaden Hbf's red exit signal (FSN RB75-28701, runs 27 and 29), how TSW 7 lets a driver contact the signaller (cab radio BP_SimpleRadio, the HUD's "Request pass signal", ADispatcher::RequestPassSignalAtDanger and its 18 answers), what the autopilot now does about it, and the two follow-on faults of run 29: the train crept into the PZB 2000 Hz magnet as its brake leaked off, and readying left the Dosto cab car's traction latched. §7: what the V3 dispatcher's "wait signal" answers 3, 8, 9 and 12 mean (at FW_Asig_P3 it can only be 3 or 8: the route was never reserved), and how tsw-sdk reads the exact answer code.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-22T20:10+0200
-last_edited: 2026-10-22T20:10+0200
+last_edited: 2026-10-22T22:40+0200
 ---
 
 # A red exit signal and the signaller (2026-10-22)
@@ -43,7 +43,10 @@ Markers: **[log]** seen in the run's log, **[decomp]** read in decompiled bluepr
    passes on sight. The autopilot now does this (below).
 4. Run 29's **protection emergency brake** at 12:06 was PZB's 2000 Hz forced brake: the train
    crept 21 m into the signal's magnet while its automatic brake leaked off.
-5. Readying after it ended with **"traction stays latched until Throttle clears"**: readying put
+5. **(§7, later)** The refusal "wait signal" at Wiesbaden can only be answer 3 or 8; 8 means
+   the V3 dispatcher has not reserved the route and permission is only given for coupling
+   moves. No answer depends on the train's distance to the signal.
+6. Readying after it ended with **"traction stays latched until Throttle clears"**: readying put
    the cab car's Throttle at 0.0, which is what latches that lock. Fixed in tsw-sdk.
 
 ## 1. Run 29, step by step [log]
@@ -115,8 +118,9 @@ EPassAtDangerResponse)`. A granted service is kept in the AI dispatchers'
 | 17 | SignalNotFound | Denied (no route) |
 
 FSN scenario A completes its "contact the signaller" step on answer 5 for `PlayerService`
-(`FSN_ScA_Objectives::CheckSignal`). Answer 11 means the train is too far from the signal:
-closing up to it first, as the autopilot does, is what the game wants.
+(`FSN_ScA_Objectives::CheckSignal`). ~~Answer 11 means the train is too far from the signal~~:
+corrected in §7, no answer measures the distance to the signal; 11 is an armed approach
+release whose release section the train does not occupy yet.
 
 ### Two ways in [decomp]
 
@@ -188,12 +192,129 @@ end), which latched the lock, and its `unlatch` handled only combined handles (B
 handle to 0.1 of its range when the latching release condition is named after it, here
 `Throttle` at 0.1. The BR 430's path is unchanged.
 
+## 7. What the four "wait signal" answers mean (2026-10-22, later)
+
+Run 32 and 33 (RB75-28701, autopilot 795a334, 1x and 2x game speed): every call was refused
+with "Abgelehnt. Auf Signalwechsel warten." (Denied, wait signal), which the radio shows for
+answers 3, 8, 9 and 12 alike. Sources: the Ghidra C of the whole exe
+(`fullghidra/tsw7/export/TrainSimWorld.c`), field offsets from the exe's reflection tables,
+and the FSN tile data.
+
+### The dispatcher answers at once [binary, decomp]
+
+FSN runs on `ADispatcherAIV3` (`FrankfurtSBahnRouteDefinition` `DefaultDispatcher`, and the
+timetable's `Dispatcher`). `RequestPassSignalAtDanger`'s impl (`0x110fc30`) finds the
+service's next path signal (`false` when none) and calls the dispatcher's virtual handler
+(slot 0x658; V3 `0x113c810`, V2 `0x113b7b0`, V1 `0x11107c0`) with a callback
+(`0x110fa20`). There is no queue: the handler answers inside the call, and the callback
+broadcasts `RequestPassAtDangerCallbackDelegate` (dispatcher +0x240) on the spot. The callback
+also turns any answer into 1 when the signal is not at Stop, 0x11 when it does not resolve,
+and sets the signal's `PassRequestStatus` (+0x1dc): 1 Accepted for 1, 2 and 5 (the
+`DE_SignalModel` then shows Zs 1), 3 Pending for answer 3, unchanged for the refusals.
+
+### The V3 handler, in order [binary `0x113c810`]
+
+It takes the service's list in `RouteRequests` (TMap at +0x5a8) and the first request without
+`bEntered`. No request, or an Inactive one: **6**. The request's signal is another: **7**.
+Then by the request's `RequestState` (`EDispatchRouteRequestV3State`: 0 Inactive, 1 Active,
+2 PendingAcquisition, 3 Acquired, 4 Complete):
+
+**Acquired (the dispatcher holds the route, the signal is red):**
+
+1. signal not at Stop: 1;
+2. its overridden aspect (+0x1e0, `ts2.signals.SetOverriddenAspect`) is Stop: **3**;
+3. no route assigned on the signal (`CurrentAssignedRouteIndex` < 0): **3**;
+4. a manual junction not set: 4; another junction not set: **3**;
+5. the route's sections occupied: **5**, granted (call-on into an occupied block);
+6. `ApproachReleaseState` 1 Ready: **11**; 2 TimerRunning: **12**;
+7. a bit of the request's `RequiredBlocks`: 2 (broken signal), the service allowed;
+8. otherwise **3**.
+
+**Active, PendingAcquisition or Complete (the route is not reserved):** permission is only
+given for a coupling move.
+
+1. The instruction now (`CurrentInstructionIndex`, plus 1 when it has succeeded) must be
+   Couple, or GoTo followed by Couple; otherwise **8**, `RefusedNotConsistOperation`.
+2. The target formation missing: 15; nothing to couple to: 16; the request depends on
+   another service: 10.
+3. None of the vehicles to couple to stands in the request's sections: **9**,
+   `NoRequiredRailVehiclesInBlock`.
+4. The route cannot be acquired: 10; else it is taken and the answer is 5 (or 4, answered
+   later once junctions are set).
+
+| Code | Means | What a driver (the autopilot) can do |
+| :--- | :--- | :--- |
+| 3 WaitForSignal | The route is reserved, the line ahead clear, but the signal stays red: aspect overridden, no route set on the signal, or a junction not in place | Wait and call again in a few minutes; the junctions or the route setting may follow. `ts2.signals.ClearOverriddenAspect` / `SetRoute` in a test |
+| 8 RefusedNotConsistOperation | The dispatcher has **not reserved the route** and the train is not on a coupling move, the only case it lets a train past a signal whose route it has not taken | Nothing by radio: wait for the route. Calling again does not help until the request is acquired, and then the signal clears by itself. The reason the route is held is in the dispatcher (below) |
+| 9 NoRequiredRailVehiclesInBlock | A coupling move: the train to couple to does not stand in the route's sections | Wait for that train. Not about the caller's own position |
+| 12 WaitingForApproachReleaseEnd | Approach release: the train occupies the release section, the timer runs | Wait standing on the release section |
+| 11 WaitingForApproachReleaseStart | Approach release armed, the release section not occupied yet | Move onto the release section (`ApproachReleaseTargetDistance` from the signal, ±`ts2.dispatcher.ApproachReleaseSectionToleranceCM`, 200 cm) |
+
+No branch measures the distance from the train to the signal. Approach release exists only
+on routes whose `RouteData.ApproachControl` is not None with an `ApproachSpeed`
+(`0x10fda90`, `0x1007500`); its state goes 1 Ready, 2 when the release section is occupied,
+3 when the timer completes.
+
+### FW_Asig_P3 [decomp]
+
+`FrankfurtSBahn/Content/Map/Tiles/TT_x-86_y-6` (lines 343-350): a `DE_SignalModel_C` on
+`NetworkRibbon_62`, `SignalDisplayID = P3`, `DispatchBlockCount = 2`, 48 routes (25 enabled:
+7 main, 8 shunt, 10 yard), **every one `ApproachControl=None`**, `CallOnSectionCount=0`. So
+answers 11 and 12 cannot occur there, and RB75-28701 has no Couple instruction, so 9 cannot
+either (8 comes first). **The answer at Wiesbaden is 3 or 8, most likely 8**: the dispatcher
+never acquired the route for the service. Closing up to the signal changes nothing on this
+route; stopping at the platform's stop marker would do as well.
+
+### Why V3 withholds a route [binary `0x1142110`, inferred]
+
+Each dispatch tick walks the service's requests in order. A request goes from Active to
+PendingAcquisition only while the blocks counted are under its `RequiredBlocks`, its
+`PathEntryDirection` matches, and the service is not pending on a dependency. A request with
+a `Dependency` (another service's request, Soft or Hard) waits until that request is Acquired
+or Complete. Unless the signal is automatic with a default route, every instruction from the
+one before the current to the request's must pass a check (`0x1140c10`) that waits until named
+other services have passed a given instruction. Then the sections are acquired, stopping at
+the first one another service holds. So a route is withheld for good by a dependency on a
+service that never advances (not spawned, stuck, cancelled) or by sections another train
+holds for good. The dependency table (`RouteTimetableServiceInstructionDependencyEntry`,
+timetable actor +0x100) is built at run time; the service definition has no dependency
+fields.
+
+Layouts for a reader [binary, reflection]: `DispatcherRouteRequestV3` (0x90): ServiceName 0,
+Signal 0xc, RequiredBlocks 0x68, InstructionIndex 0x70, RequestState 0x78, bits 0x79
+(bEntered 2), Dependency 0x7c (ServiceName 0x7c, RequestIndex 0x84, DependencyType 0x88).
+`ADispatcherAIV3`: RouteRequests 0x5a8, PassAtDangerCallbacks 0x6a0,
+ActivePassAtDangerAllowedServices 0x6b0. Signal: ApproachReleaseState 0x11c, SignalAspect
+0x188, CurrentAssignedRouteIndex 0x1d0, PassRequestStatus 0x1dc.
+
+`ts2.dbg.LogDispatcherServiceStatus` builds its texts ("Pending route %d … depends on service
+%s", "No dependency but unable to acquire route") but this build never prints them (V3 slot
+0x670, `0x1131130`). Console commands that may help: `ts2.dbg.ForceDirtyDispatcherDependencies`,
+`ts2.dbg.CompleteCurrentServiceInstruction`, `ts2.dbg.TrySetAndLockJunctionsForService`,
+`ts2.dbg.LogServicesForCurrentRoute`, `ts2.dbg.DispatcherExtendedErrorInfo`,
+`ts2.signals.SetPathedRoute`, `showdebug Dispatcher` (counts only).
+
+### What tsw-sdk and tsw-autopilot do now
+
+- **tsw-sdk** reads the exact answer: `sys::CallWatch` swaps the `UFunction::Func` (0xD8) of
+  `BP_SimpleRadio_C::HandleRequestPassAtDangerCallback` for a thunk that copies the call's
+  parameters and runs the original (`ProcessEvent` reaches a blueprint function through
+  `Func`). `signaller::Response` is the enum (unit-tested values and names);
+  `Answer::Granted`/`Refused` carry it, and answers 2 and 5 count as permission.
+- **tsw-autopilot** logs it: `autopilot: the signaller refused: RefusedNotConsistOperation
+  (8); waiting at the signal, next call after standing 1200 s (the dispatcher has not reserved
+  the route: calling cannot help soon)`. After such an answer (0, 6, 7, 8, 13 to 17) the next
+  call waits four times `autopilot.signaller_stand_s`; any other refusal keeps the setting.
+
 ## What to check in game
 
-1. RB75-28701 again: around 05:41 the log shows the call and its channel ("the cab radio"),
-   the HUD shows the answer text. If granted: "Befehl" held, the train passes at 40 km/h or
-   less, no PZB brake, on-sight ends at the next signal. If refused, the HUD text says why
-   (train ahead, no route, too far): write it here, it is the dispatcher's reason for the red
-   signal.
-2. A forced PZB brake at a stand followed by readying: readying ends "ready" with the Throttle
+1. RB75-28701 again: after the departure, `autopilot: called the signaller by the cab radio`,
+   then `autopilot: the signaller refused: <Name> (<code>)` within a step. Expected 8 (or 3).
+   A line `signaller: the radio's answer is not watched: ...` or `refused (code not read` means
+   the watch failed: report it. Then, in the same stand, `ts2.dbg.ForceDirtyDispatcherDependencies`
+   and, if still red, `ts2.dbg.CompleteCurrentServiceInstruction`: if P3 clears, a dependency
+   held the route.
+2. If granted: "Befehl" held, the train passes at 40 km/h or less, no PZB brake, on-sight
+   ends at the next signal.
+3. A forced PZB brake at a stand followed by readying: readying ends "ready" with the Throttle
    at 0.1, not latched.
