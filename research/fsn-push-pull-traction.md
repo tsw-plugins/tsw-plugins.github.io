@@ -4,7 +4,7 @@ description: >-
   Driving the Frankfurt S-Bahn (FSN) push-pull train from the Dosto cab car: how the 766pbzfa's own traction lock works, what its Throttle sends to the BR 143, what the loco checks before it makes force, and the control sequence after a change of ends. Decompiled.
 game_build: 886 (TSW 7)
 created: 2026-10-21T21:40+0200
-last_edited: 2026-10-21T21:40+0200
+last_edited: 2026-10-22T06:00+0200
 ---
 
 # FSN push-pull: traction from the Dosto cab car (2026-10-21)
@@ -220,6 +220,19 @@ Throttle again (any change) once the loco is clear.
 - Loco: the same on the loco's manager, plus `bAFB_ResetRequired` and
   `Simulation_TapChanger_ClosestTapIndex`.
 - `HUD_GetTractiveEffort` on the loco shows whether the force arrived.
+- **The cab car's HUD effort is a quarter of the loco's.** `766pbzfa.HUD_GetTractiveEffort`
+  returns the slave loco's `IS_GetTractiveEffortN` **divided by 4**; its brake effort is passed on
+  unscaled. A gauge showing 30 kN from the cab car is 120 kN at the loco. Any "no force" check
+  run from the cab car must allow for that, or better, look at the acceleration.
+- **"Brake effort" is the loco's negative tractive effort**, not the air brakes:
+  `BR143.IS_GetBrakingEffortN = max(-Simulation_HUD_TractiveEffort_N_Result, 0)`. Seen from the
+  cab car in game (autopilot runs 11 and 12, 2026-10-22): 0 kN tractive with 23..47 kN brake effort at
+  full throttle, so the loco was braking dynamically. The loco brakes whenever the cab car's
+  cable parameter 1 (`DynamicBrake` output x `MaxDynamicBrakingEffortN`) is above 0, and it also
+  zeroes the traction while parameter 1 is >= 1 N (`GetTargetTractiveEffort`).
+- The loco recomputes its force only in `IncomingParameterChanged` (cable parameters 0, 1, 3,
+  13, 14), so a lock or AFB reset that clears later leaves the old setpoint until the next
+  change.
 
 ## Decompiler fix
 
