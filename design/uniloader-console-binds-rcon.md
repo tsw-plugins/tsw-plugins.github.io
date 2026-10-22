@@ -1,13 +1,65 @@
 ---
 name: uniloader-console-binds-rcon
 description: >-
-  A Source/Counter-Strike-style console for uniloader: binds that run console code, aliases, cfg files, plugin-suggested default binds the user can unbind, and a password-protected Source RCON server that runs console code as if typed. Design and ordered implementation plan; nothing implemented yet.
-status: proposal
+  A Source/Counter-Strike-style console for uniloader: binds that run console code, aliases, cfg files, plugin-suggested default binds the user can unbind, and a password-protected Source RCON server that runs console code as if typed. Design, plan, and what the implementation (steps 1-8, loader side) changed.
+status: implemented (loader steps 1-8; tsw-ui and tsw-sdk parts open)
 created: 2026-10-22T07:45+0200
-last_edited: 2026-10-22T07:45+0200
+last_edited: 2026-10-22T08:36+0200
 ---
 
-# uniloader: console, binds and RCON (proposal, 2026-10-22)
+# uniloader: console, binds and RCON (2026-10-22)
+
+## Implementation notes (where it deviates from the plan below)
+
+Implemented in uniloader commits `4db526a` (grammar), `0a76f4d` (binds, built-ins, runner,
+buffer), `9fa2279` (secrets, RCON), `a657505` (game keys), with the owner's decisions of
+2026-10-22 (section 14: port 48622, RCON may not change `rcon_*`, password always required,
+one buffer with `wait`, first suggestion wins, `exec` falls back to running a command, gamepad
+and game tick later).
+
+- **No `hotkeys.toml` migration.** The owner's standing no-legacy rule replaced decision 6:
+  `binds.cfg` replaces `hotkeys.toml` outright and the old file is ignored.
+- **`binds.cfg` is read, not executed.** A parser accepts `bind`, `unbind`, `rebind` and
+  `alias` lines and warns about anything else (commands to run at start go in `autoexec.cfg`).
+  Written atomically (temp file + rename) after every change.
+- **The buffer** serialises runs with one execution lock instead of a thread hop: a
+  synchronous caller runs its script itself when the console is free (no 16 ms latency for a
+  game-thread `console_capture`), queues and waits up to 5 s when it is busy, and runs inline
+  when called from inside a run. The input thread drains queued scripts and is woken by a
+  condition variable as soon as one is due. This lock is held across plugin calls; the inline
+  rule and the timeout keep that from deadlocking. Scripts from RCON therefore run on the
+  RCON connection's thread when the console is free.
+- **`wait` parks only its own script**, not the whole buffer, so a `wait 5000` in one bind
+  does not hold up RCON or the console.
+- **`binds reset all`** puts every plugin suggestion back on its keys and keeps the user's own
+  binds (which still shadow a suggestion on their key). `binds reset <key>` drops the user
+  bind on that key and puts back the suggestions that want it.
+- **Plugin suggestions** are entries `<plugin>.<name>`: `host.hotkey` (runs `on_hotkey`, shown
+  as `action plugin.name`) and the new `host.bind_default(name, title, keys, script)`. Both are
+  moved with `rebind`, so the user's changes are always keyed by entry.
+- **RCON password**: at least 12 characters always (the loader only stores the hash, so it
+  cannot check the length later when the bind address changes). Over RCON, `bind` and `alias`
+  refuse a script whose text mentions `rcon`, so RCON cannot plant a bind that changes its
+  settings when the user presses the key. Plugin code (Lua, a plugin command) can still change
+  any setting; the RCON password remains code execution, as section 10 says.
+- **Secret settings** are shown as `<set>`/`<unset>`; a command carrying one is echoed and
+  logged as `set name <redacted>`, and a bind or alias may not hold one. `setting_get` still
+  returns the value to plugins. The overlay's settings editor shows a password field. Not done:
+  the overlay console's own input history keeps the typed line (in memory only).
+- **Keys**: `mouse1`-`mouse5`, `uparrow` etc., `ins`/`del`/`pgup`/`pgdn`, `kp_0`-`kp_9`,
+  `kp_plus`/`kp_minus`/`kp_multiply`/`kp_slash`/`kp_del`. No `kp_enter`: it shares its
+  virtual key with Enter, which polling cannot tell apart.
+- **Game keys**: `loader.toml game_keys` (label "used by the game") and `HostApi.keys_reserve`.
+- **ABI** (version stays 1, fields appended): `PluginCallbacks.on_hotkey_release`,
+  `HostApi.bind_default`, `HostApi.keys_reserve`, `SettingFlags::SECRET`, `BindDesc`. A plugin
+  built against this SDK must not run on an older loader (its callback table is larger than
+  the one the old loader passes): redeploy the loader and every plugin together.
+- **Open**: step 8's tsw-sdk part (report TSW's live input mappings through
+  `reserve_keys`), step 9 (tsw-ui Binds screen, completion of key names, echo toasts), step 10
+  (wheel through `input_event`, XInput gamepad, game-thread tick source, WebSocket front end,
+  `dayz-ctl --rcon`). Recorded in tasks/todo.md.
+
+The original proposal follows unchanged.
 
 The owner's request, in his words:
 
