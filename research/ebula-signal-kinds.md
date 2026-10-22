@@ -7,7 +7,7 @@ description: >-
   signals (Frankfurt S-Bahn surveyed), and the classification rules with their confidence.
 game_build: 886 (TSW 7)
 created: 2026-10-22T11:00+0200
-last_edited: 2026-10-22T11:30+0200
+last_edited: 2026-10-22T20:00+0200
 ---
 
 # Signal kinds for the EBuLa (2026-10-22)
@@ -55,7 +55,7 @@ reader calls it twice a second for tsw-ebula) fills:
 | `SignalAspectClass`, `DistanceToSignal`, `bSignalIsPermissive`, `NextSignalPosition`, `SignalPropertyGuid` | the next signal | no |
 | `NextSignals: TArray<FFoundSignalAspect>` | `{ESignalAspectClass Value, float DistanceToNextSignal, FVector NextSignalPosition}` per signal | no |
 | `NextSignalProperty: FSignalPropertyReference` | `{RibbonReference, PropertyReference}` GUIDs of the next signal; `UNetworkBlueprintFunctionLibrary::GetNetworkSignalProperty(World, Ref)` turns it into the object | via the object |
-| `TrackRestrictionQuery.FoundSignals: TArray<FFoundSignal>` | `{TWeakObjectPtr<UNetworkPointPropertyBase> Signal, float DistanceCM}`: the signals the aid's own query found. The query asks for `MaxReturnedSignals` 4 within `MaxSearchDistance` 10000 (as the HTTP API prints it) with `SignalFlags` 7 | via the object |
+| `TrackRestrictionQuery.FoundSignals: TArray<FFoundSignal>` | `{TWeakObjectPtr<UNetworkPointPropertyBase> Signal, float DistanceCM}`: the signals the aid's own query found; **empty in game** (below). The query asks for `MaxReturnedSignals` 4 within `MaxSearchDistance` 10000 (as the HTTP API prints it) with `SignalFlags` 7 | via the object |
 
 `SignalFlags` is an `ESignalTypeBitFlags` mask: `Mainline 1 | YardEntry 2 | YardExit 4` = 7, so the
 aid lists main, yard-entry and yard-exit signals, never shunting signals or distant signals (those
@@ -79,9 +79,41 @@ heads of the separate view actor (`DE_SignalView_C.Heads`, e.g. `DE_Head_HvK_HSB
 mast plates beside it (`BP_DE_SignalSign_WhiteYellowWhiteYellowWhite_C`, the Sbk mast sign, 7 in
 FSN) are separate actors with no link to the property that a mod could follow cheaply [V].
 
-Cost: one `GetDriverAidData` call already happens; reading `FoundSignals` adds, per signal (at most
-4), a `GUObjectArray` slot check for the weak pointer (`FUObjectItem::SerialNumber` at 0x10) and two
-`FString` reads. No extra game call.
+**`FoundSignals` comes back empty from `GetDriverAidData` (run 29, 2026-10-22).** In game every signal
+read Unknown and the one-time "found signals, none readable" log never appeared: the array the call
+copies out has no elements, with a train too. The aid's next signals (`NextSignals`) carry only aspect,
+distance and position.
+
+### Where the names come from now (tsw-sdk, 2026-10-22)
+
+Candidates, read in the headers and the decompiled blueprints:
+
+| Source | Gives | Verdict |
+| :--- | :--- | :--- |
+| `NextSignalProperty` + `UNetworkBlueprintFunctionLibrary::GetNetworkSignalProperty(World, Ref)` | the next signal only | too little: the page lists 4 |
+| our own `URailVehicleComponent::QueryTrackRestrictions(FTrackRestrictionQuery&)` | `FoundSignals` with weak pointers to the signal properties, as many as asked | **chosen** |
+
+`QueryTrackRestrictions` is what the safety systems call themselves: `GNT_Service` runs
+`RailVehicle.RailVehiclePhysicsComponent.QueryTrackRestrictions(...)` with queries such as
+`MaxSearchDistance 4000, MaxReturnedSignals 1, SignalFlags 1` (`IntermittentTrackRestrictionQuery`)
+and reads `FoundSignals[i].DistanceCM`; ACSES, ATB, KVB and the Czech code reader do the same.
+`MaxSearchDistance` is an `FDistanceQuantity` in metres (GNT looks 4 and 15 km ahead), `DistanceCM`
+centimetres.
+
+tsw-sdk's timetable reader (`timetable::read`, `query_signals`) now asks the aid's own query again
+(10 km, `bWholeFormation`, 4 signals, `SignalFlags` 7, no speed limits) on the `URailVehicleComponent`
+of the vehicle the player drives (`Controller.Pawn` → `DriverPawn::GetDrivableActor` →
+`RailVehiclePhysicsComponent`), once per driver aid read (twice a second for tsw-ebula), and pairs the
+found signals with the aid's `NextSignals` by distance (within 20 m; no pairing by order any more).
+`SearchDirection` is relative to the vehicle, and a cab car can face backwards: the reader keeps the
+direction that last put found signals at the aid's distances and tries the other one when none match.
+Cost per read: one track walk of at most 10 km (GNT runs a 15 km one for its continuous supervision), two when the
+direction turns, plus two `FString` reads per signal. The aid's own `FoundSignals` path is gone.
+
+Check in game: the plugin log line, once per world,
+`timetable: signal names from QueryTrackRestrictions (forwards|backwards): N of M listed signals named,
+K found, J with a kind`. N should equal M; if N is 0 the distances do not match (the aid may measure
+from another point than `bWholeFormation`), if K is 0 the call found nothing.
 
 ## How the German routes name their signals [V, FSN pak dump]
 
@@ -128,7 +160,8 @@ with V before or after entry letters (`vB`, `Bv`); `distant_of` gives the entry 
 They show only where a route models a distant signal as a main signal: the driver aid's query
 lists no `UNetworkSignalAncillaryProperty` [I].
 
-Rules 1 to 3 run in tsw-sdk when the driver aid is read (`SignalAhead::kind`, `id`, `plate`).
+Rules 1 to 3 run in tsw-sdk when the driver aid is read (`SignalAhead::kind`, `id`, `plate`), on the
+signals of its own query (above).
 Rule 4 runs in tsw-ebula, which has the stations ahead. Only what none of them tells shows as
 "Sig". "Sbk" comes only from rule 1, with the plate's digits as its number ("Sbk103"); a block signal is
 "Bksig" otherwise. `bSignalIsPermissive` exists for the next signal only, so it is not used to tell
@@ -136,13 +169,10 @@ Sbk from Bksig (a row would change name as the train comes closer).
 
 ## Open questions (check in game)
 
-- **Is `TrackRestrictionQuery.FoundSignals` filled in the copy `GetDriverAidData` returns?** The
-  HTTP API serialises the query with `foundSignals: []` without a train. If it stays empty with a
-  train, every signal falls back to rule 4. The fallback then is `NextSignalProperty` +
-  `GetNetworkSignalProperty` for the next signal, or an own `QueryTrackRestrictions` with a longer
-  horizon. *Unverified in game.*
-- Do the distances of `FoundSignals` (`DistanceCM`) and `NextSignals` (`DistanceToNextSignal`)
-  agree? tsw-sdk pairs them within 20 m, else by order when both lists are as long.
+- ~~Is `TrackRestrictionQuery.FoundSignals` filled in the copy `GetDriverAidData` returns?~~ No (run 29);
+  replaced by our own query, see above. *Unverified in game:* that our query's distances match the aid's.
+- Do the distances of our query's `FoundSignals` (`DistanceCM`) and `NextSignals` (`DistanceToNextSignal`)
+  agree? tsw-sdk pairs them within 20 m only.
 - Do the 4 found signals include yard exit signals the train is not routed through?
 - Dresden–Leipzig, Frankfurt–Fulda and Linke Rheinstrecke: the same naming habits? (Their tiles were
   not surveyed yet.)

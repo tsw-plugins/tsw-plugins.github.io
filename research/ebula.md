@@ -7,7 +7,7 @@ description: >-
   autopilot can read instead.
 game_build: 886 (TSW 7)
 created: 2026-10-21T15:55+0200
-last_edited: 2026-10-22T10:45+0200
+last_edited: 2026-10-22T20:00+0200
 ---
 
 # EBuLa: the real system, simulators, and TSW (2026-10-21)
@@ -265,6 +265,34 @@ FrankfurtFulda, core pak):
   page into the BR 143 / BR 114 frame and over the whole page on the others. *Not yet verified in
   game* (the first test is owed).
 
+### Day, night and brightness on the cab screens (2026-10-22) [V]
+
+Read in the FrankfurtSBahn pak (FSN Dosto `FSN_DB_Doppelstock/Content/DigitalDisplays`, BR 143
+`FSN_DB_BR143/Content/DigitalDisplays`); the Dosto copies in the other packs are the same.
+
+| | Dosto (`WBP_DB_DD_*`) | BR 143 (`WBP_FSN_DB_143_*`) |
+| :--- | :--- | :--- |
+| Night switch | DataStore key `DayNight` (bool); `WBP_DB_DD_Main` calls `Set_DayNight(IsNight)` on every page | `DigitalDisplay_V1` display mode, 1 = night (`GetDisplayMode` / `SetDisplayMode`, a cab key toggles 0/1); pages get `OnDisplayModeChanged(Mode)` |
+| What a page does | `WBP_DB_DD_Base::Set_DayNight_Local`: `DayNight_Mask` = grey 0.6 by day, black by night (`MaskAlt` the inverse, `MaskAlt2` white/black). The EbuLa page tints its `Background` image (`MI_DD_DB_EbuLa`: `M_AlphaMask`, translucent unlit, texture `T_DD_DB_EbuLa`) with it and invalidates its `InvalidationBox_0` | `WBP_FSN_DB_143_PageBase`: `bNightmode = (Mode == 1)`, then `UpdateColors` reads `DT_FSN_DB_143_ColorTable` (DayColor / NightColor per row) |
+| Night colours (linear) | material parameter collection `DB_DD_Pallete_Night`: `Night_Background` 0.021, `Night_Text` 1.0 (day: background 0.65, text 0) | `Background` 0.052, `Text` 1.0, `BorderPrimary` 0.84, `BorderSecondary` 0.67 (day: 0.56-0.58, 0, 0.40, 0.72) |
+| Brightness ("Helligkeit") | the container `DB_FSN_DD_WidgetContainer` (a `WidgetProximityComponent`): button 22 adds 0.1 to DataStore `Brightness` (wraps above 1.0 to 0.1); `UpdateBrightness` sets the component's `TintColorAndOpacity` to (1, 1, 1, Brightness), or all 0 without power. Default tint (1, 1, 1, 0.5) | `BP_FSN_DB_143_DD_ScreenClient`: `GetBrightness` mapped to `MinimumBrightness..1` into the tint's RGB, alpha 1 with power and in gear, else 0 (page `WBP_FSN_DB_143_Brightness`) |
+| Screen material | `MI_DB_DD_WidgetScreen` (parent `M_DB_DD_WidgetScreen`, `IsScreen` 1): parameters `SlateUI` (the render target), `TintColorAndOpacity`, `BackColor` (0, 0, 0, 1), `EmissiveAdjustment*`, `EmissiveCapMult`, `IsLamp`; no shading-model override, so **default lit** (Specular 0.5, Metallic 0) with the widget as emissive | `MI_FSN_DB_BR143_Screen` (parent `M_FSN_DB_BR143_Screen`, masked): the same parameter set, also lit |
+
+**Why a dark page looks light blue (run 29, FSN Dosto cab car, 05:46, night).** Both screens of the
+desk showed the same haze: the game's own traction page in night mode (white text, background linear
+0.021) came out sRGB 98,151,190 at its top and 78,139,184 at its bottom, our EbuLa page (paper linear
+0.004) sRGB 127,163,191, the dark desk beside them 41,30,40. A near-black page that comes out far lighter
+than the dimly lit desk is not the page's colour but light the surface adds: the screen material is lit, so
+the cab's light and reflections (and the exposure of a dark cab) lay a haze over every page, varying
+with the angle. No paper colour removes it, and the brightness keys only scale the widget's own light.
+What helps is bright text: the game's own night pages use text 1.0 for that reason. tsw-ebula's night
+ink went from 0.20 to 0.85 (tsw-ebula 0eb039f). *Unverified in game:* how the haze compares at full
+`Brightness`, and in the BR 143 (same kind of material, so the same is expected).
+
+Reading the cab's own state would let `ebula.night = auto` follow the driver's day/night key instead
+of the clock: the Dosto page's `DayNight_Mask` (black = night), the BR 143 page's `bNightmode`. Not
+built.
+
 ### What a mod can read instead (for tsw-autopilot)
 
 The data an EBuLa would display exists natively.
@@ -275,7 +303,7 @@ The data an EBuLa would display exists natively.
 | Braking curve to the next restriction | `FSpeedCurveQuery { ExpectedDecelerationMS2, MinDistanceFromSpeedLimit, MinDistanceFromSignal } → OutMaxSpeedMS, OutTargetSpeedMS, OutDistanceToRestrictionCM, OutRestrictionType`, evaluated through `UPhysicsFunctionLibrary::GetTrackRestrictionSpeeds`, `GetDistanceToSpeedCurve`, `GetTimeToSpeedCurve`, and the LZB variants `GetLZBRestrictions` / `GetDistanceToSpeedCurveLZB` | [V] headers. The game computes target speeds for a given deceleration itself. |
 | Station names, stops and times (Ankunft/Abfahrt) | `ARouteTimetable` instructions, `GetServiceExpectedTimes`, `GetTrackData` stations and markers ahead | already in [timetable-and-map.md](timetable-and-map.md) |
 | Delay | `FRouteTimetableService::EstimatedLateness` | same |
-| Main signals by kind (Esig, Asig, Zsig, Bksig, Sbk) in the text column | the driver aid's `TrackRestrictionQuery.FoundSignals` → `UNetworkSignalProperty::SignalId` / `SignalDisplayID` / `SignalType`, classified by name, plate and place | [ebula-signal-kinds.md](ebula-signal-kinds.md); *unverified* at runtime |
+| Main signals by kind (Esig, Asig, Zsig, Bksig, Sbk) in the text column | our own `QueryTrackRestrictions` on the driven vehicle (the driver aid's `FoundSignals` comes back empty) → `UNetworkSignalProperty::SignalId` / `SignalDisplayID` / `SignalType`, classified by name, plate and place | [ebula-signal-kinds.md](ebula-signal-kinds.md); *unverified* at runtime |
 | Gradient (Sägelinien) | `FTS2DriverAidData::Gradient`, `FTS2TrackData::TrackHeights` | [V] headers |
 | Tunnels, LZB/ETCS begin and end, El signals, radio channels | no reflected source found | [I] not available |
 
