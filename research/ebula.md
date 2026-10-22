@@ -7,7 +7,7 @@ description: >-
   autopilot can read instead.
 game_build: 886 (TSW 7)
 created: 2026-10-21T15:55+0200
-last_edited: 2026-10-22T09:30+0200
+last_edited: 2026-10-22T10:45+0200
 ---
 
 # EBuLa: the real system, simulators, and TSW (2026-10-21)
@@ -275,6 +275,7 @@ The data an EBuLa would display exists natively.
 | Braking curve to the next restriction | `FSpeedCurveQuery { ExpectedDecelerationMS2, MinDistanceFromSpeedLimit, MinDistanceFromSignal } → OutMaxSpeedMS, OutTargetSpeedMS, OutDistanceToRestrictionCM, OutRestrictionType`, evaluated through `UPhysicsFunctionLibrary::GetTrackRestrictionSpeeds`, `GetDistanceToSpeedCurve`, `GetTimeToSpeedCurve`, and the LZB variants `GetLZBRestrictions` / `GetDistanceToSpeedCurveLZB` | [V] headers. The game computes target speeds for a given deceleration itself. |
 | Station names, stops and times (Ankunft/Abfahrt) | `ARouteTimetable` instructions, `GetServiceExpectedTimes`, `GetTrackData` stations and markers ahead | already in [timetable-and-map.md](timetable-and-map.md) |
 | Delay | `FRouteTimetableService::EstimatedLateness` | same |
+| Main signals by kind (Esig, Asig, Zsig, Bksig, Sbk) in the text column | the driver aid's `TrackRestrictionQuery.FoundSignals` → `UNetworkSignalProperty::SignalId` / `SignalDisplayID` / `SignalType`, classified by name, plate and place | [ebula-signal-kinds.md](ebula-signal-kinds.md); *unverified* at runtime |
 | Gradient (Sägelinien) | `FTS2DriverAidData::Gradient`, `FTS2TrackData::TrackHeights` | [V] headers |
 | Tunnels, LZB/ETCS begin and end, El signals, radio channels | no reflected source found | [I] not available |
 

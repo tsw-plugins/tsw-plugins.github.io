@@ -4,7 +4,7 @@ description: >-
   Index of the Train Sim World 7 research notes: the game's internals, interfaces into the running game, driving trains from code, UE4SS pitfalls, sessions, avatars, ghosts, performance, plus the early studies (loader comparison, prior art, community findings).
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-17T11:59+0200
-last_edited: 2026-10-22T08:15+0200
+last_edited: 2026-10-22T10:40+0200
 ---
 
 # Research notes ("Erkenntnisse")
@@ -32,6 +32,7 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [safety-systems-and-hud.md](safety-systems-and-hud.md) | PZB 90 and Sifa as the game implements them (decompiled), the HUD interface every train has (tractive force, traction lock, gauges), timetable departure times and stop positions, the game's AI driver |
 | [timetable-and-map.md](timetable-and-map.md) | The player's service (stops, times, platforms, positions), the signal and speed limit ahead, the route's stations for a map: what is reachable, tsw-sdk's `timetable` reader |
 | [ebula.md](ebula.md) | EBuLa, the German cab timetable display: the real system and Ril 408, other simulators and fan tools, how TSW 7 implements its EbuLa screens (decompiled) |
+| [ebula-signal-kinds.md](ebula-signal-kinds.md) | Telling Esig, Asig, Zsig, Bksig and Sbk apart for the EBuLa: the driver aid's found signals, `UNetworkSignalProperty` ids, plates and types, how Frankfurt S-Bahn names its signals, the classification rules and their confidence |
 | [ready-any-train.md](ready-any-train.md) | Readying any train from code: a survey of every TSW 7 train's controls, control families and named positions, the class-independent ready loop, results per class |
 | [traction-locks.md](traction-locks.md) | Why power gives no force: the latched traction locks of the BR 110 (simulation graph), BR 143 (AFB speed selector) and Class 323, the native converter gates, start sequences (decompiled) |
 | [br430-traction.md](br430-traction.md) | The FSN BR 430 (and BR 423/433): combined brake/power MasterController with neutral at 0.5, the 2.1 bar holding brake at a stand, the `LockManager_C` traction lock that latches until neutral, what "Traktion gesperrt" shows (decompiled) |
