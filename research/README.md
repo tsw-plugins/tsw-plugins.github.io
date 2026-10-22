@@ -4,7 +4,7 @@ description: >-
   Index of the Train Sim World 7 research notes: the game's internals, interfaces into the running game, driving trains from code, UE4SS pitfalls, sessions, avatars, ghosts, performance, plus the early studies (loader comparison, prior art, community findings).
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-17T11:59+0200
-last_edited: 2026-10-22T10:50+0200
+last_edited: 2026-10-23T02:30+0200
 ---
 
 # Research notes ("Erkenntnisse")
@@ -45,6 +45,7 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [brake-fill-positions.md](brake-fill-positions.md) | Which trains have a fill position below running (German/European valves) and which do not (EP EMUs, US 26L, vacuum), and how each releases standing brake drag (decompiled survey) |
 | [emergency-brake-recovery.md](emergency-brake-recovery.md) | Recovering from an emergency brake: how Sifa, PZB, the driver's brake, emergency valves and buttons latch and reset, what clears `TractionFromEmergency` (BR 143, BR 442, Dosto cab car), the driver's sequence and readying's (decompiled) |
 | [timetable-mode-start.md](timetable-mode-start.md) | Starting timetable mode with a chosen service from code: the drive-mode settings the menu writes, the native conditions at world start, the start card that pauses the game |
+| [timetable-on-foot.md](timetable-on-foot.md) | A service that starts on foot because its train is still being brought in by a hidden AI service (Left Rhine RE-3409): the objectives laid out anyway, no card, how a player gets into the train, what decides when it arrives, how tsw-sdk and the autopilot board it (decompiled) |
 | [native-code.md](native-code.md) | Reading the game's code: blueprint decompiling (repak, kdecomp) and headless Ghidra; the simulation graph API, lever ticks, brake valves, traction gates, native Sifa, the AI driver's target speed; rea ruled out |
 | [dtg-http-api.md](dtg-http-api.md) | Dovetail's HTTP API reference: routes, nodes, writes, function calls, VirtualRailDriver, subscriptions, measured latency, the RailDriver path behind it |
 | [community-tools.md](community-tools.md) | Community tools that read or drive TSW from outside (maps, controller bridges, Arduino cabs, RailDriver DLL replacements, UE4SS mods) and what they learned |

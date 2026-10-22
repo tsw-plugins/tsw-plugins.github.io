@@ -4,7 +4,7 @@ description: >-
   How the TSW 7 front end starts timetable mode driving a chosen service (every UDriveModeSettings field it writes, the time of day, the native conditions at world start) and why the start card ("BEGINNEN") pauses the game and how to dismiss it from code. Decompiled blueprints and Ghidra.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-21T20:15+0200
-last_edited: 2026-10-21T20:15+0200
+last_edited: 2026-10-23T02:30+0200
 ---
 
 # Starting timetable mode with a service (2026-10-21)
@@ -81,6 +81,9 @@ else SpawnOnFoot();                                                             
   set.
 - The failed attempt loaded at 09:21, when the service was neither active nor ready, so the player
   spawned on foot. Setting the time of day to the service's start time (or just before) fixes that.
+- At the start time itself a service can still be unready when its train is brought in by a
+  hidden AI service that arrives just after (Left Rhine RE-3409): see
+  [timetable-on-foot.md](timetable-on-foot.md).
 
 ## The start card pauses the game
 
