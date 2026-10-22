@@ -4,7 +4,7 @@ description: >-
   Driving the Frankfurt S-Bahn (FSN) push-pull train from the Dosto cab car: how the 766pbzfa's own traction lock works, what its Throttle sends to the BR 143, what the loco checks before it makes force, and the control sequence after a change of ends. Decompiled.
 game_build: 886 (TSW 7)
 created: 2026-10-21T21:40+0200
-last_edited: 2026-10-22T06:00+0200
+last_edited: 2026-10-22T08:15+0200
 ---
 
 # FSN push-pull: traction from the Dosto cab car (2026-10-21)
@@ -233,6 +233,110 @@ Throttle again (any change) once the loco is clear.
 - The loco recomputes its force only in `IncomingParameterChanged` (cable parameters 0, 1, 3,
   13, 14), so a lock or AFB reset that clears later leaves the old setpoint until the next
   change.
+
+## The loco's lock at 71 km/h on the cab-car leg (2026-10-22)
+
+Seen in autopilot runs 17, 18 and 19 (scenario `RegionalbahnBreakdown`, Frankfurt Hbf towards
+Frankfurt-Höchst, driving from the Dosto cab car): the BR 143's own `HUD_GetIsTractionLocked`
+turns true and its tractive effort drops to ~0 exactly when the train reaches 71–72 km/h under
+high power (run 19: Throttle 0.99, 126–132 kN; run 18: power 0.75, 109–124 kN), at different
+places (next signal 568 m vs 774 m away), only on the cab-car leg. Holding `CircuitBreaker` up
+from the cab car for 1.5 s did not clear it. On the loco leg the same loco ran 156 km/h.
+
+Sources: `RVM_FSN_DB_BR143.txt` and the loco's simulation asset
+`FSN_DB_BR143/Content/Simulation/Simugraph/SA_FSN_DB_BR143` (NAS dump
+`/var/mnt/nas/gamedumps/tsw7/paks/TS2Prototype-WindowsNoEditor-FrankfurtSBahn/`). kdecomp prints
+only the simulation graph's wiring, not the node values; those were read from the raw
+`.uexp` tagged properties with a small scanner (scratch script, see "Reading node values").
+
+### Ruled out [decomp]
+
+| Candidate | Why not |
+| :--- | :--- |
+| Neutral section, gap in the overhead line | No `TrackElectrificationProperty` override and no `ElectrificationCommandProperty` in the tiles between Frankfurt Hbf (~x-57) and Höchst (~x-65); every FSN track rule carries 15 kV 16.7 Hz. The only tile overrides are at Wiesbaden, Mainz, Eddersheim and Bischofsheim. |
+| Traction-motor overheating | `bEnableThermalEffects = False` on all four `ElectricalMotorV2` nodes (`OverheatTemperature` 473 K unused). |
+| A speed limit in the traction control | `TractionBrakingControl.MaxSpeed` = 33.3 m/s (120 km/h). Its `NormalisedSpeedVsTractionActuatorOutput` curve rises from 0.40 at a stand to 1.0 at 0.33 × Vmax (40 km/h) and stays flat above. Nothing drops at 0.59 (71 km/h). |
+| The loco's Sifa | `UpdateSifaEnabledState` enables it only with battery on **and** exactly one loco cab active; with the cab car master it is off. |
+| The loco's PZB | `PZB_Service_V3.UpdatePZB_IsActive` = enabled **and** `ActiveReverserEngaged`; the loco's reverser is out on the cab-car leg. |
+| Loss of the loco's control supply | `Get_HasElectricSupply` is the battery (or remote supply), not the line. |
+| `RunningProgram` / AFB "conditional run" | Only reachable from a loco cab that is master (`JumperCable_F/B.bIsMaster`). |
+
+### The likely cause: the R-brake intensifier switches at 70 km/h [decomp + inferred]
+
+The loco's lock conditions (every `SetCondition` in the blueprint): `TLConditionBrakingConverter`,
+`PantoRaisedCBOpen`, `BatteryOff`, `TLConditionAFB/Power`, `TLCondition AFBReset`,
+`TLM_AFB_Reset`, `TLM_Doors`, `TLM_ReverserNeutral`, and the emergencies `PZBEmergency` /
+`SifaEmergency` with the release condition `ELM_Release_Stopped`. Only one of them can depend on
+speed:
+
+- `TLConditionBrakingConverter` is set while `TractionBrakingConverter.ExternalBrakeSetPoint`
+  is above **1.25** (`UpdateBCTractionLock`, bound with
+  `BindFloatSimulationNodeParameterChangedEvent(..., 5, 1.25, 0)`). In the graph,
+  `ExternalBrakeSetPoint` is wired from the expression node **`Brake Bypass`**, whose inputs
+  are the brake cylinder control pressure (`BCC_Pressure`) and the brake pipe pressure
+  (constants 1.2, 2.0, 3.0 in its byte code). So it is a brake pressure, in bar.
+- The graph has an expression with the inputs `IsRMode`, `Speed`, `IsFastR` and the constants
+  **19.444 m/s (70 km/h)** and 13.889 m/s (50 km/h): the R-brake's high stage. It feeds
+  `R Mode Memory` (a value transition, i.e. latched with hysteresis), whose output is
+  `BrakeIntensifier.ControlChamberPressureCoefficient`. Above 70 km/h in brake position R the
+  loco's brake intensifier multiplies its brake cylinder control pressure; it drops back below
+  50 km/h.
+
+Put together: on the cab-car leg the loco keeps a small residual brake pressure (the formation's
+brakes not releasing fully after a stop is a known effect on this leg, see the notes on the fill
+stroke). Below 70 km/h it stays under 1.25 bar. When the train passes 70 km/h the intensifier
+raises it over 1.25 bar, `TLConditionBrakingConverter` locks the loco, the loco sets its force to
+0 and runs its tap changer down. That fits every observation: the speed (71–72 km/h, with the
+sample interval), independent of place, only on the leg where the loco's brake is not under the
+driver's own valve, and the breaker not mattering. The brake position is set at spawn by
+`CalculateStartingBrakeSelectorPosition` (`BrakeMode`, default input 1), presumably R for a
+passenger train.
+
+Not proven: the `Brake Bypass` byte code was not decoded, so the exact formula (and whether the
+intensified or the raw pressure goes in) is open. The in-game check below settles it.
+
+### Why it stays locked
+
+- The lock clears by itself only when `ExternalBrakeSetPoint` falls back under 1.25 bar, i.e.
+  when the loco's brake releases or the speed falls under 50 km/h (intensifier low stage).
+- Even then **the force does not come back on its own**: the loco recomputes its force only in
+  `IncomingParameterChanged` (a cable parameter change from the cab car, section 2). With the
+  Throttle held still, the setpoint stays 0. Any Throttle change re-sends it.
+- If the lock or its run-down also triggered an AFB reset (`TLM_AFB_Reset`), that clears only when
+  the tap changer reaches 0 (`OnTapChangerReachZero`), and the run-down is again started only by a
+  cable change.
+
+### What a driver does
+
+1. Release the train brake fully from the cab car: a fill stroke (`TrainBrake` 0.0 for ~3 s,
+   then 0.1 running) and `DirectBrake` 0.0 (release). This takes the loco's brake cylinder to 0.
+2. Move the Throttle (e.g. down to 0.1 and back up) so the loco re-reads the cable and applies
+   the force again.
+3. Prevention: do the fill stroke before the train reaches 70 km/h on this leg (or after every
+   stop), so no residual pressure is left to intensify. Switching the loco's brake mode to P
+   would also avoid the high stage, but that is a train-preparation setting and changes braking.
+4. The circuit breaker and a thorough re-ready are not needed, and a one-off lock is no reason to
+   cap the power for the rest of the run.
+
+### In-game check (for the main session)
+
+At the moment of the lock (cab-car leg, at 70 km/h), read on the **loco**:
+`LocomotiveConditionManager.GetAllTractionConditions` (expect `TLConditionBrakingConverter`),
+`GetAllReleaseConditions`, the simulation parameters `TractionBrakingConverter.ExternalBrakeSetPoint`,
+the brake cylinder pressures and `R Mode Memory.OutValue0`, `Pantograph_F.bCircuitBreakerOpen`,
+`bAFB_ResetRequired`, `TapChanger.CurrentTapIndex`. Then (a) do a fill stroke and a Throttle
+wiggle at speed and see whether the force comes back; (b) in a second run, do the fill stroke at
+~60 km/h and see whether the lock at 70 km/h goes away.
+
+### Reading node values
+
+kdecomp prints a `SimulationAsset` as its runtime graph only. The node structs (motor thermal
+flags, curve keys, expression byte code) are ordinary tagged properties in the `.uexp`: find the
+name-map index of a property (`OverheatTemperature`, `MaxSpeed`, `ByteCode`), match the 8-byte
+`FName` (index, number 0) followed by its type name, and read the value after the tag (UE 4.26:
+name, type, size, array index, type data, `HasPropertyGuid` byte, value). `FRichCurveKey` is
+27 bytes (3 mode bytes, then time, value, two tangents and weights as floats). Expression
+constants show up as floats in the `ByteCode` array.
 
 ## Decompiler fix
 

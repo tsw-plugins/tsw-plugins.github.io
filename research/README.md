@@ -4,7 +4,7 @@ description: >-
   Index of the Train Sim World 7 research notes: the game's internals, interfaces into the running game, driving trains from code, UE4SS pitfalls, sessions, avatars, ghosts, performance, plus the early studies (loader comparison, prior art, community findings).
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-17T11:59+0200
-last_edited: 2026-10-21T20:15+0200
+last_edited: 2026-10-22T08:15+0200
 ---
 
 # Research notes ("Erkenntnisse")
@@ -35,6 +35,8 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [ready-any-train.md](ready-any-train.md) | Readying any train from code: a survey of every TSW 7 train's controls, control families and named positions, the class-independent ready loop, results per class |
 | [traction-locks.md](traction-locks.md) | Why power gives no force: the latched traction locks of the BR 110 (simulation graph), BR 143 (AFB speed selector) and Class 323, the native converter gates, start sequences (decompiled) |
 | [fsn-push-pull-traction.md](fsn-push-pull-traction.md) | The FSN BR 143 + Dosto cab car push-pull: the cab car's own traction lock (latches with the Throttle at 0.0), its Throttle as a force demand, what the loco checks, the sequence after a change of ends (decompiled) |
+| [train-max-speed.md](train-max-speed.md) | A train's own maximum speed: `RailVehicleDefinition.MaximumSpeed` through `CreatedFromPtr`, why the game's formation/service limits are not it, the tsw-sdk reader (decompiled) |
+| [brake-fill-positions.md](brake-fill-positions.md) | Which trains have a fill position below running (German/European valves) and which do not (EP EMUs, US 26L, vacuum), and how each releases standing brake drag (decompiled survey) |
 | [timetable-mode-start.md](timetable-mode-start.md) | Starting timetable mode with a chosen service from code: the drive-mode settings the menu writes, the native conditions at world start, the start card that pauses the game |
 | [native-code.md](native-code.md) | Reading the game's code: blueprint decompiling (repak, kdecomp) and headless Ghidra; the simulation graph API, lever ticks, brake valves, traction gates, native Sifa, the AI driver's target speed; rea ruled out |
 | [dtg-http-api.md](dtg-http-api.md) | Dovetail's HTTP API reference: routes, nodes, writes, function calls, VirtualRailDriver, subscriptions, measured latency, the RailDriver path behind it |
