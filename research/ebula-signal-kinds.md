@@ -7,7 +7,7 @@ description: >-
   signals (Frankfurt S-Bahn surveyed), and the classification rules with their confidence.
 game_build: 886 (TSW 7)
 created: 2026-10-22T11:00+0200
-last_edited: 2026-10-22T11:00+0200
+last_edited: 2026-10-22T11:30+0200
 ---
 
 # Signal kinds for the EBuLa (2026-10-22)
@@ -19,6 +19,9 @@ Sources:
   (`FrankfurtSBahn/Content/Map/Tiles/TT_*.txt`, every `DE_SignalModel_C` object) and the signal
   blueprints of the European Content Pack (`RailNetwork/Signals/DE_SignalModel`).
 - Ril 408.2341A01 as summarised in [ebula.md](ebula.md), and a remark by a DB employee to the owner.
+
+How a real screen writes them (spelling, the ▽, bold station names) is in
+[ebula-real-screens.md](ebula-real-screens.md).
 
 Markers: **[V]** read in the headers, the pak data or a primary source. **[I]** inferred, or from a
 secondary source. *Unverified in game* marks what still needs a run.
@@ -34,8 +37,9 @@ Text column](ebula.md#what-it-shows-ril-4082341a01-valid-from-13122015-v)):
 | Asig | Ausfahrsignal: exit from a station ("ohne Asig" on the station row when there is none) |
 | Zsig | Zwischensignal: between the entry and exit signals |
 | Bksig | Blocksignal on the open line |
-| Sbk 12 | Selbstblocksignal (automatic block) with its number |
-| Vsig, "Zsig Ri F", "E 50", "ohne Zs 6" | distant signals at unusual places, route indicators, Hp 2 speeds other than 40, missing Zs 6 |
+| Sbk103 | Selbstblocksignal (automatic block) with its number, no space on the real screen |
+| ▽ Bvsig | Vorsignal (distant signal) of entry signal B, with a triangle before it |
+| "Zsig Ri F", "E 50", "ohne Zs 6" | distant signals at unusual places, route indicators, Hp 2 speeds other than 40, missing Zs 6 |
 
 A timetable is printed (or loaded) long before the train runs; the aspect is what the driver sees
 outside. tsw-ebula's earlier "Signal HALT" rows were therefore unlike any real EBuLa. The aspect view
@@ -119,9 +123,14 @@ In order; the first rule that answers wins.
 | 3 | `SignalType` `YardEntry` is Esig, `YardExit` is Asig | low to medium [I] |
 | 4 | The place, from the stations ahead (`GetTrackData` platform markers, one span per station from the first platform start to the last platform end): the last signal from the span start to 400 m past its end is the Asig, earlier ones there Zsig; the first signal up to 1500 m before the span is the Esig, later ones before the span Zsig; signals a nearer station already placed keep their kind; any other signal up to the last station listed is a Bksig; beyond it, unknown | low: platform markers are not the station limits, and the window lengths are guesses [I] |
 
+Distant signals (`SignalKind::Distant`, shown "▽ Bvsig"): "vsig" anywhere in the id, or a plate
+with V before or after entry letters (`vB`, `Bv`); `distant_of` gives the entry signal's letters.
+They show only where a route models a distant signal as a main signal: the driver aid's query
+lists no `UNetworkSignalAncillaryProperty` [I].
+
 Rules 1 to 3 run in tsw-sdk when the driver aid is read (`SignalAhead::kind`, `id`, `plate`).
 Rule 4 runs in tsw-ebula, which has the stations ahead. Only what none of them tells shows as
-"Sig". "Sbk" comes only from rule 1, with the plate's digits as its number; a block signal is
+"Sig". "Sbk" comes only from rule 1, with the plate's digits as its number ("Sbk103"); a block signal is
 "Bksig" otherwise. `bSignalIsPermissive` exists for the next signal only, so it is not used to tell
 Sbk from Bksig (a row would change name as the train comes closer).
 
