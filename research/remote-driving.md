@@ -4,10 +4,13 @@ description: >-
   A guest drives the host's train: the seat and lever messages over the relay, applying values on the host, and what was verified in game on both sides.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-17T21:40+0200
-last_edited: 2026-10-18T08:14+0200
+last_edited: 2026-10-22T05:00+0200
 ---
 
 # Remote driving: a guest drives the host's train (2026-10-17)
+
+> **Key changed 2026-10-22:** the seat key is now **F11**. F8 (used below, as tested) is the
+> game's own destination-display key (DefaultBindings), so it moved.
 
 Code: `mod/native/src/drive.rs` (host and guest side), events through the
 relay's existing `event` message (no relay change). Concept: docs/08
