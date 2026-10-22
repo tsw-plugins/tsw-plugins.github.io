@@ -289,9 +289,14 @@ What helps is bright text: the game's own night pages use text 1.0 for that reas
 ink went from 0.20 to 0.85 (tsw-ebula 0eb039f). *Unverified in game:* how the haze compares at full
 `Brightness`, and in the BR 143 (same kind of material, so the same is expected).
 
-Reading the cab's own state would let `ebula.night = auto` follow the driver's day/night key instead
-of the clock: the Dosto page's `DayNight_Mask` (black = night), the BR 143 page's `bNightmode`. Not
-built.
+Reading the cab's own state lets `ebula.night = auto` follow the driver's day/night key instead
+of the clock: the Dosto page's `DayNight_Mask` (black = night), the BR 143 page's `bNightmode`.
+Built 2026-10-22 (tsw-sdk `cab_screen::NightKey`, tsw-ebula `night.rs`): the page turns with the
+game's own pages beside it; the clock only decides without a cab page (HUD panel). Note the Dosto's
+`Set_DayNight_Local(IsNight)` picks the grey with `SelectColor(grey, black, IsNight)`, so the
+DataStore's `DayNight` = 1 (its default) gives the grey, day look despite the parameter's name;
+reading the mask itself avoids depending on that. *Unverified in game:* that the key changes the
+mask on the Ebula page while it is not the page shown.
 
 ### What a mod can read instead (for tsw-autopilot)
 
