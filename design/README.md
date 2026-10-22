@@ -3,7 +3,7 @@ name: design-index
 description: >-
   Index of the design documents and proposals for tsw-sdk and its plugins, with the status of each.
 created: 2026-10-18T11:57+0200
-last_edited: 2026-10-18T11:57+0200
+last_edited: 2026-10-22T07:50+0200
 ---
 
 # Design documents
@@ -25,3 +25,4 @@ for something that shipped:
 | [tsw-coop-concept.md](tsw-coop-concept.md) | `accepted` | tsw-coop's scope: a host-owned world, walking guests, driver handover, relay transport, sessions, entitlements, anticheat |
 | [tsw-autopilot.md](tsw-autopilot.md) | `implemented` | An autopilot plugin: target speed from limits, signals and the stop point, power/brake servo, stops and doors, hand-back on manual input; what it reads and what is still to verify in game |
 | [native-menus.md](native-menus.md) | `proposal` | Real, mouse-driven entries in the game's own menus and a plugin indicator, without cooked assets |
+| [uniloader-console-binds-rcon.md](uniloader-console-binds-rcon.md) | `proposal` | A Source-style console for uniloader: script grammar, binds that run console code, plugin-suggested default binds the user can unbind, cfg files, and a password-protected Source RCON server |
