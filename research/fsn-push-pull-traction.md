@@ -263,6 +263,11 @@ only the simulation graph's wiring, not the node values; those were read from th
 
 ### The likely cause: the R-brake intensifier switches at 70 km/h [decomp + inferred]
 
+> Correction (2026-10-22, [br143-drag-and-battery.md](br143-drag-and-battery.md)): `Brake Bypass`
+> reads `BrakeCylinder_Auto`, the distributor's output before the intensifier, so the intensifier
+> cannot trip this lock. It trips once the distributor holds more than 1.25 bar, i.e. its control
+> reservoir is ~0.5 bar above the pipe; the FSN BR 143's preset starts it 0.43 bar above.
+
 The loco's lock conditions (every `SetCondition` in the blueprint): `TLConditionBrakingConverter`,
 `PantoRaisedCBOpen`, `BatteryOff`, `TLConditionAFB/Power`, `TLCondition AFBReset`,
 `TLM_AFB_Reset`, `TLM_Doors`, `TLM_ReverserNeutral`, and the emergencies `PZBEmergency` /
