@@ -4,7 +4,7 @@ description: >-
   Index of the Train Sim World 7 research notes: the game's internals, interfaces into the running game, driving trains from code, UE4SS pitfalls, sessions, avatars, ghosts, performance, plus the early studies (loader comparison, prior art, community findings).
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-17T11:59+0200
-last_edited: 2026-10-22T10:40+0200
+last_edited: 2026-10-22T10:50+0200
 ---
 
 # Research notes ("Erkenntnisse")
@@ -39,6 +39,7 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [br430-traction.md](br430-traction.md) | The FSN BR 430 (and BR 423/433): combined brake/power MasterController with neutral at 0.5, the 2.1 bar holding brake at a stand, the `LockManager_C` traction lock that latches until neutral, what "Traktion gesperrt" shows (decompiled) |
 | [fsn-push-pull-traction.md](fsn-push-pull-traction.md) | The FSN BR 143 + Dosto cab car push-pull: the cab car's own traction lock (latches with the Throttle at 0.0), its Throttle as a force demand, what the loco checks, the sequence after a change of ends (decompiled) |
 | [train-max-speed.md](train-max-speed.md) | A train's own maximum speed: `RailVehicleDefinition.MaximumSpeed` through `CreatedFromPtr`, why the game's formation/service limits are not it, the tsw-sdk reader (decompiled) |
+| [direct-brake.md](direct-brake.md) | The loco's own brake (direct/independent, "Zusatzbremse"): the BR 143's non-self-lapping valve per cab and its double check valve, which trains have one under which name, staying vs sprung release levers, how readying releases it (decompiled survey) |
 | [brake-fill-positions.md](brake-fill-positions.md) | Which trains have a fill position below running (German/European valves) and which do not (EP EMUs, US 26L, vacuum), and how each releases standing brake drag (decompiled survey) |
 | [timetable-mode-start.md](timetable-mode-start.md) | Starting timetable mode with a chosen service from code: the drive-mode settings the menu writes, the native conditions at world start, the start card that pauses the game |
 | [native-code.md](native-code.md) | Reading the game's code: blueprint decompiling (repak, kdecomp) and headless Ghidra; the simulation graph API, lever ticks, brake valves, traction gates, native Sifa, the AI driver's target speed; rea ruled out |

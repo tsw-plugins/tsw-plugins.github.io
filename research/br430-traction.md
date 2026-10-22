@@ -4,7 +4,7 @@ description: >-
   Why the FSN BR 430 S-Bahn EMU made no force: its MasterController is a combined brake/power handle with neutral at 0.5, standstill primes a 2.1 bar holding brake, and its traction lock is a LockManager_C (ActiveLockConditions, not LockConditions) that latches until the handle is back at neutral. Every lock condition, the "Traktion gesperrt" label, and the same code in the FSN and FTF BR 423/433. Decompiled.
 game_build: 886 (TSW 7)
 created: 2026-10-22T09:56+0200
-last_edited: 2026-10-22T09:56+0200
+last_edited: 2026-10-22T10:50+0200
 ---
 
 # BR 430: traction, lock and holding brake (2026-10-22)
@@ -271,6 +271,33 @@ were compared, not traced line by line.
 8. Brake: `0.401 − 0.301 × b`; emergency 0.0.
 9. From brake back to power: write 0.5 first, then the power value, in separate ticks.
    If `bIsLocked` is true with no active condition, go back to 0.5.
+
+## Implemented (tsw-sdk, tsw-autopilot, 2026-10-22)
+
+- **Lock reader** (`cab/power.rs`, `Power::lock`): the traction manager is the component named
+  `TractionLockManager` or `LocomotiveConditionManager`; its fields come from its class
+  (`TractionLockManager_C`: `LockConditions`/`bIsLocked`/`ReleaseConditions`;
+  `LocomotiveConditionManager_C`: `TractionConditions`/`IsLocked`/`ReleaseConditions`;
+  `LockManager_C`: `ActiveLockConditions` + `TemporaryLockConditions`/`bIsLocked`/
+  `ActiveReleaseConditions`). Every other manager of those classes on the train (`EmergencyManager`,
+  `PenaltyManager`; BR 146 and BR 114 have the same pattern) gives `Lock::causes` as
+  `EmergencyManager: EC_PZB_Emergency`. `Lock::latched()` is locked with no condition and a
+  release condition set. The FTF BR 114 also uses `LockManager_C` and is read the same way.
+- **Readying** (`cab/ready.rs`): a latched lock with a combined power handle gets the handle sent
+  back to neutral as a change (0.48, then 0.5, on separate frames; just 0.5 when it is elsewhere),
+  twice, then the lock is waited for once (30 s). The Blocked text says "traction stays latched until
+  RC_ThrottleIdle clears".
+- **The handle** (`cab/lever.rs` `Combined`, autopilot `levers::Handle`): built from the lever's own
+  `ValueMap`, no per-class numbers: neutral = the input of output 0; brake runs from the least
+  negative output (−1, no brake) to the next above the lowest (−10; the lowest, −11, is emergency
+  and never used); power from the least positive output (+1) to the highest (+10), at least
+  `MIN_POWER` = 15 % of that span (430: input 0.6515, demand 0.226; FSN 423: 0.7025, demand 0.138),
+  so the holding brake (demand ≥ 0.1) always lets go. Brake `b` gives input 0.401 − 0.301 b on the
+  430 and 0.36 − 0.26 b on the FSN 423, as section 2 and 6 derived. A handle without such a map
+  (Class 323) keeps the range-and-profile mapping.
+- **Driving** (`pilot/moves.rs`): between a brake and a power position the handle stops at neutral
+  for one control step; a traction lock that stays 3 s with power at idle gets the handle sent below
+  neutral and back (`traction still locked: MasterController through neutral again`).
 
 ## In-game check (for the main session)
 
