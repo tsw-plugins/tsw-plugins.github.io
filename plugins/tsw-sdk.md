@@ -19,7 +19,8 @@ the Train Sim World half:
   and reports the game's crash reports. It logs where the game is when that changes
   (`[tsw] place: main menu`, `place: world <map>`, `place: elsewhere`), which
   `scripts/tswwait menu|world|exit` waits on. Console: `tsw.status`, `tsw.console`,
-  `tsw.quit`, `tsw.dump <class path>` (a class's reflected properties, into the log),
+  `tsw.quit`, `tsw.mainmenu` (leave the world for the main menu through the game's
+  `GotoMainMenu(.., MainMenu)`, as its pause menu does), `tsw.dump <class path>` (a class's reflected properties, into the log),
   `tsw.find <class path>` (the live instances of a class with their paths, into the log),
   `tsw.scenario <name>` (start an installed scenario or tutorial by its name, from the menu or
   a route), `tsw.livery list|mine|new <definition> [name]|export <id>|forget <id>|restore|reload|mods`

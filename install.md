@@ -80,7 +80,7 @@ F9 menu, or in `uniloader/config/<plugin>.toml` while the game is closed.
 | `jump.enabled` | `true` | Space jumps on foot; photo mode moves to O (at once) |
 
 The adapter's console commands: `tsw.status`, `tsw.console <command>` (the engine's console),
-`tsw.quit`, `tsw.plugins`.
+`tsw.quit`, `tsw.mainmenu` (leave the world for the main menu), `tsw.plugins`.
 
 The flag files of the standalone mod (`tswcoop-native-no-ue4ss`, `tswcoop-no-skip-intro`,
 `tswcoop-no-jump`) are no longer read: use `loader.toml`'s `load` list and the settings above.
