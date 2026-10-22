@@ -7,7 +7,7 @@ description: >-
   autopilot can read instead.
 game_build: 886 (TSW 7)
 created: 2026-10-21T15:55+0200
-last_edited: 2026-10-21T15:55+0200
+last_edited: 2026-10-22T09:30+0200
 ---
 
 # EBuLa: the real system, simulators, and TSW (2026-10-21)
@@ -236,6 +236,35 @@ In short: TSW models the **device** (its housing, keys, power, day/night, clock)
 The screen shows fixed artwork of a timetable (a texture per DLC), which matches community descriptions
 of an "empty" or static display. Correct speeds, km, times or position are not shown.
 
+### How a cab screen is built, and how a mod draws on it (2026-10-22) [V]
+
+Read in the full pak dump (`/var/mnt/nas/gamedumps/tsw7/paks/`, FrankfurtSBahn, DresdenLeipzig,
+FrankfurtFulda, core pak):
+
+- **Host:** every DigitalDisplay screen is a `DigitalDisplay_V1_ScreenClient_C` component, a subclass
+  of `WidgetProximityComponent` (a widget component made only near the player). Its user widget
+  (`GetUserWidgetObject`) is a page container (`WBP_FSN_DB_143_PageContainer_C :
+  DigitalDisplay_V1_PageClient_C`) with two `WidgetSwitcher`s (`PageSwitcher`, `OverlayWidget`). The
+  pages come from a DataTable of `Struct_DigitalDisplay_V1_PageData { Class, SlotNames, Instance }`:
+  BR 143 FSN `DT_FSN_DB_143_PageTable` has `GSMR`, `Brightness` (overlay) and `EbuLa`. Every page is
+  an ordinary user widget instance; the component renders the container into the cab.
+- **The BR 143 / BR 114 EbuLa page is an empty frame.** `WBP_FSN_DB_143_Ebula_C`,
+  `WBP_DLG_DB_143_Ebula_C` and `WBP_FTF_DB_114_Ebula_C` share one layout on a 640×520 root
+  `CanvasPanel_0`: a status bar on top, a header row at y 30 (18 px; three cells 0.4 / 1 / 0.4), a
+  grid `CanvasPanel_33` at (0, 48) of 630×405 with six bordered columns whose borders sit at x 40,
+  110, 230, 500 and 580 (the six EBuLa columns), a status line at y 453 (19 px) and the soft-key bar
+  at the bottom (50 px). No widget fills the grid: the device is there, its content is not.
+- **Other EbuLa pages** (Dosto `WBP_DB_DD_Ebula`, BR 423 `WBP_FSN_DD_EbuLa`, Vectron) draw a picture of
+  a timetable (`MI_DD_DB_EbuLa`, `T_*_EbuLa_Day/Night`) with a clock on top.
+- **Drawing on it:** the page widgets are not in the viewport, so `GetAllWidgetsOfClass(world,
+  UserWidget, TopLevelOnly = false)` lists them (it walks the class hash, not the object array). A
+  mod picks them by class name (`*Ebula*`), takes the root canvas from the page's `WidgetTree`, and
+  adds its own widgets there (`AddChildToCanvas`, slot anchors and offsets); the screen component
+  renders them with the page, only while that page is the selected one. tsw-sdk's
+  `tsw_sdk_host::cab_screen` does this; [tsw-ebula](https://github.com/tsw-plugins/tsw-ebula) puts its
+  page into the BR 143 / BR 114 frame and over the whole page on the others. *Not yet verified in
+  game* (the first test is owed).
+
 ### What a mod can read instead (for tsw-autopilot)
 
 The data an EBuLa would display exists natively.
@@ -264,6 +293,10 @@ Unpacked: `FTF_DB_Vectron/Content/DigitalDisplaysNew/Widgets`, `FTF_DB_BR423/Con
 `DLG_DB_BR442/Content/DigitalDisplays/Screens` including `Panel4` (DresdenLeipzig pak).
 
 ## Open questions
+
+- Does `GetAllWidgetsOfClass` with `TopLevelOnly = false` see the cab screen pages (their `GetWorld`
+  must be the player's world), and does the screen component re-render widgets added at runtime?
+  First test with tsw-ebula on BR 143 FSN.
 
 - Does anything call `WBP_DLG_DB_BR442_ESF.AddRow`? Decompile the rest of `DLG_DB_BR442/Content`.
 - Do newer DLC that are not installed here (e.g. TSW 6/7 German routes) ship a data-driven EbuLa?
