@@ -119,21 +119,23 @@ Driving the Fulda timetable's RB51-15500 (Frankfurt Hbf to Wächtersbach) with t
   departure (Hanau Hbf: 04:54:54/04:54:54 for 04:59/05:00). The service then simply goes on.
 - **Track items (`GetTrackData`).** A station-wide item (`Hanau Hbf []`, no marker name) gives
   the distance to the platform's near end. Once the front is inside the platform, it gives the
-  far end instead. A platform marker (`Hanau 7 [Hanau Hbf Bstg 7]`) gives the distance to the
-  marker range's *start*, which depends on the direction of travel:
-  - When the platform runs against the train, that start is the far end. At Hanau the marker
-    read 932 m and the station item 624 m, with the platform 308 m long.
-  - When the platform runs with the train, both items read the same, the near end (Rodenbach:
-    7195 m and 7195 m).
+  far end instead. A platform marker (`Hanau 7 [Hanau Hbf Bstg 7]`) gives either end:
+  - At Hanau the marker read 932 m, the far end, with the station item at 624 m and the
+    platform 308 m long.
+  - At Rodenbach both items read the same, the near end (7195 m and 7195 m).
 
-  A marker one platform length beyond a station-wide item of the same length is therefore
-  reversed. Inside the platform both items read the far end, so the two cases can't be told
-  apart there.
+  This was first put down to the direction of travel. Decompiled (2026-10-23,
+  [platform-marker-distance.md](platform-marker-distance.md)), it is whether the marker lies
+  within one track segment (far end) or spans several (near end). The track data does not
+  say which. Inside the platform both items read the far end.
 - **Where to stop.** The HUD's distance, `UTS2HUDObjectiveWidget::GetDistanceToObjective(float&)`
   in cm, is the straight-line distance from the camera to the objective's
   `GetStopAtPlacementCetrePosition()`. It points to where the front should halt, a few metres
   short of the platform's far end: 804 m at Hanau Wolfgang, with the platform 599–811 m ahead.
-  Only the HUD's own widget instances answer; the class templates return `false`.
+  Only the HUD's own widget instances answer; the class templates return `false`. It is the
+  marker widget's last drawn distance: with the HUD or objective markers hidden it stays 0,
+  so tsw-sdk now computes it through the marker's `UpdateObjectiveMarkerPosition`
+  ([platform-marker-distance.md](platform-marker-distance.md)).
   - The distance has no sign and is measured from the cab, metres above the rail. Near the
     marker it stops shrinking, and once the marker is passed it grows again.
   - tsw-autopilot reads it while it is more than 50 m away and runs the rest down by the distance

@@ -4,7 +4,7 @@ description: >-
   Index of the Train Sim World 7 research notes: the game's internals, interfaces into the running game, driving trains from code, UE4SS pitfalls, sessions, avatars, ghosts, performance, plus the early studies (loader comparison, prior art, community findings).
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-17T11:59+0200
-last_edited: 2026-10-23T02:30+0200
+last_edited: 2026-10-23T12:00+0200
 ---
 
 # Research notes ("Erkenntnisse")
@@ -39,6 +39,7 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [br430-traction.md](br430-traction.md) | The FSN BR 430 (and BR 423/433): combined brake/power MasterController with neutral at 0.5, the 2.1 bar holding brake at a stand, the `LockManager_C` traction lock that latches until neutral, what "Traktion gesperrt" shows (decompiled) |
 | [signaller-red-exit-signal.md](signaller-red-exit-signal.md) | A red exit signal that never cleared (FSN RB75-28701): no missing action, contacting the signaller (cab radio, HUD request, the dispatcher's 18 answers), passing on sight with PZB "Befehl", the leaked-off brake that crept into the 2000 Hz magnet, the cab car's latched lock |
 | [fsn-push-pull-traction.md](fsn-push-pull-traction.md) | The FSN BR 143 + Dosto cab car push-pull: the cab car's own traction lock (latches with the Throttle at 0.0), its Throttle as a force demand, what the loco checks, the sequence after a change of ends (decompiled) |
+| [platform-marker-distance.md](platform-marker-distance.md) | Which end of a platform the track data's marker distance gives (far end inside one track segment, near end across several; no direction returned), why the HUD objective read 0 m and the read that works hidden (decompiled) |
 | [train-max-speed.md](train-max-speed.md) | A train's own maximum speed: `RailVehicleDefinition.MaximumSpeed` through `CreatedFromPtr`, why the game's formation/service limits are not it, the tsw-sdk reader (decompiled) |
 | [br143-drag-and-battery.md](br143-drag-and-battery.md) | The FSN BR 143's 0.8 bar residual brake (an overcharged distributor control reservoir in its simulation preset, the native charging-valve rule) and its five-position battery switch (on at 0.25/0.75) (decompiled) |
 | [direct-brake.md](direct-brake.md) | The loco's own brake (direct/independent, "Zusatzbremse"): the BR 143's non-self-lapping valve per cab and its double check valve, which trains have one under which name, staying vs sprung release levers, how readying releases it (decompiled survey) |
