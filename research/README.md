@@ -27,6 +27,7 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [ghosts-native.md](ghosts-native.md) | Ghost trains from the Rust DLL: what the host sends, spawning options, the view-actor ghosts that were built |
 | [train-copies.md](train-copies.md) | Real copies of the host's trains on a guest (G3): spawning at a track position, kinematic trains steered by the mod, what boarding does |
 | [avatars.md](avatars.md) | Bodies for other players: a plain Character dressed from the modular character meshes, animation assets |
+| [custom-player-models.md](custom-player-models.md) | Custom player models: none found for TSW; mod pak vs runtime import vs recolouring, coop distribution by hash (paused) |
 | [other-editions.md](other-editions.md) | Train Sim World 5: everything loads and works; what differed (menu look, Steamworks 1.47, hard-coded "7"s) and the fixes |
 | [game-state-journal.md](game-state-journal.md) | The game state journal and crash reports, and the start-up skip |
 | [safety-systems-and-hud.md](safety-systems-and-hud.md) | PZB 90 and Sifa as the game implements them (decompiled), the HUD interface every train has (tractive force, traction lock, gauges), timetable departure times and stop positions, the game's AI driver |
