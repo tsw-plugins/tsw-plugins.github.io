@@ -180,6 +180,18 @@ player (below). That tells the two apart in the next run.
 5. A normal service (RB75-28701) still shows its card and is confirmed
    (`takeover: confirmed …`) with no on-foot lines.
 
+## In game (2026-10-23)
+
+- `tsw.service Rhine 1 RE-3409` (world at 07:44): the takeover logs "starts on foot" and reports
+  each minute as designed. For 22 game minutes RE-3409, `AI_RE-3409`, `AI2_RE-3446` and RE-3446
+  stay "not started", instruction -1, no vehicle in the world: the chain does not run (the first
+  candidate above), no dispatcher hold. The player stands at **Spay**, not at Ingelheim.
+- `tsw.service Rhine 1 RE-3409 @07:36` (tsw-sdk `48dbe0f` starts the world earlier): the player
+  stands beside the line; at 07:46 the chain is still "not started" although `AI_RE-3409` was due
+  at 07:38. An earlier start does not make the hidden feeders run.
+- Still to compare: the game's own timetable menu for RE-3409, and whether ordinary AI services
+  run in a world `tsw.service` starts.
+
 ## Open
 
 - Whether the feeder chain runs at all when the world starts after `AI_RE-3409`'s start, and what
