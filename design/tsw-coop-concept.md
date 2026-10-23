@@ -163,6 +163,60 @@ like any train, with a simulation that follows the host instead of running free:
 | G5 | Riding along: seats, standing in the cab, car-relative avatar positions | Seat manager on a copied train | Code (73d88f2): `avatar.rel`, the body's place in the host's car; seats are the copy's own. Not tried in game yet |
 | G6 | The host's AI trains as real copies (G3 at scale), the DLC check per train | Cost of many simulated copies | Waits for G3 in game. AI vehicles often have no definition (`CreatedFromPtr` null): a view class → definition map is needed |
 
+## Decisions 2026-10-23: hosting and joining
+
+After the first two-machine test (hand-edited config files, both players named "blu", a
+refused reconnect, the guest 28 km from the host), the owner's requirements:
+
+- **Hosting and joining need no file editing.** They happen in the game, from the **coop
+  menu**: a native screen (the game's own menus through `tsw_ui`) that clicking the coop
+  card on the main menu opens, also F9 and `coop.menu`. Join links (`tswcoop://`) and
+  Steam's "Join game" land in the same flow. Nothing goes online at launch.
+- **Sessions are listed as a native feature.** "Find sessions" shows every session in one
+  list: the master's public list, sessions on the local network (UDP beacons on port
+  7442), and Steam friends' (their rich presence). Each row: name, route, players, ping,
+  where it was found, and what keeps us out (another mod version or game build, missing
+  DLC, full, unreachable). Filters, sort, refresh; a session with a password asks for it.
+  "Join by invite, code or address" takes a link, a master code or `ip[:port]` (an open
+  session hands its invite to `GET /invite` on its game port).
+- **Hosting** from the same menu, on the current world or from the main menu (guests
+  follow wherever the host goes). Its options are the game's own settings (`coop.*`):
+  player name (default: the Steam name), session name, visibility, players (2–8),
+  message of the day, password (typed in a dialog), port. Visibility decides who learns
+  the invite:
+
+  | Visibility | Master list | Master code | LAN beacon + `/invite` | Steam/Discord "Join" |
+  | --- | --- | --- | --- | --- |
+  | `public` | yes | yes | yes | yes |
+  | `friends` (default) | no | no | no | yes |
+  | `lan` | no | no | yes | no |
+  | `invite` | no | yes | no | no |
+
+- **`tswcoop.cfg` is optional**: only advanced network keys (master, port mapping,
+  advertise, NAT relay, transport, bans, web server). An older file's name, password and
+  session options move into the settings once; `host`/`join` lines go.
+- **Identity is a key.** Each player has an Ed25519 key (`tswcoop-player.key`); the player
+  id is derived from it and every join proves it. A reconnect from any address replaces
+  the old connection instead of being refused.
+- **Guests always start next to the host**, on join and after every world reload in a
+  session: once the guest's body and the host's fresh avatar are on the same route, a
+  guest on foot more than 50 m away is moved 3 m to the host's right with the game's far
+  jump (`ATS2PrototypePlayerController::JumpToFarLocation`, which moves the world origin
+  along). "Go to host" (menu, `/goto`) does it at any distance. A guest driving a train is
+  not moved. Next: into the host's train (copies, G3/G5) when the host is in it.
+- **The master tells the host what is wrong.** Heartbeats back off after failures; a host
+  whose port the master cannot reach is listed as reachable through its relay server
+  only (signed heartbeat with a relay in the invite), and the menu says what to forward
+  otherwise.
+- **The host's game speed is the session's** (`uniloader.speed`): guests take it on, a
+  change of their own is set back with a notice, their own speed returns when they leave.
+- **Plugin state.** Other plugins share state with the session over loader events: a
+  plugin publishes `coop.share` (`key\ndata`), the host sends each key to its guests on
+  change and every 10 s, and a guest's coop re-publishes it as `coop.shared` (empty data
+  when the session ends). First user: tsw-ebula's look (the Kontrast key's day/night
+  choice and the Helligkeit step), so a guest in the host's train sees its screens as the
+  host does; `ebula.display` and `ebula.night` stay each player's own.
+
 ## Open questions carried forward
 
 - Input forwarding latency: is 50–100 ms round trip acceptable for a

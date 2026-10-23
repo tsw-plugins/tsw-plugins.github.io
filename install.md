@@ -29,7 +29,7 @@ Win64/
     config/<plugin>.toml     each plugin's settings, written by the loader
     logs/loader.log          the loader's and the plugins' log
   tswcoop/                   tsw-coop's images
-  tswcoop.cfg                tsw-coop's relay, hosting and joining settings
+  tswcoop.cfg                tsw-coop's advanced network settings (optional)
   tswcoop-native.log         tsw-coop's own log
 ```
 
@@ -50,7 +50,8 @@ Run `install.bat` from that folder. It calls the installer built into the mod
 - keeps an existing `dwmapi.dll` (UE4SS's loader) as `dwmapi.dll.ue4ss` instead of overwriting
   it, and replaces the old standalone tsw-coop `dwmapi.dll`
 - tells uniloader to load UE4SS when it is installed in `ue4ss/`
-- writes a starter `tswcoop.cfg`
+- writes a commented `tswcoop.cfg` (advanced network settings, all optional: hosting and
+  joining are done from the coop menu in the game)
 - registers `tswcoop://` links
 
 ### Linux (Steam, Proton)

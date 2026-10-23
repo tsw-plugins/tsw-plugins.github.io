@@ -17,7 +17,10 @@ integration tests), not yet tried in game:
   (`tsw-coop-relay/src/admission.rs`, docs/07 "Joining a hosted session");
 - the relay inside the host's game, `GET /status` on its port
   (`tsw-coop-relay/src/host.rs`, `http.rs`);
-- `host =` / `join =` in `tswcoop.cfg` (`mod/native/src/hosting.rs`);
+- `host =` / `join =` in `tswcoop.cfg` (`mod/native/src/hosting.rs`; since
+  2026-10-23 hosting and joining are done from the coop menu and the file
+  only holds advanced network keys, design/tsw-coop-concept "Decisions
+  2026-10-23: hosting and joining");
 - port mapping, UPnP-IGD only (`tsw-coop-client/src/portmap.rs`, "Reaching
   the host" below).
 
