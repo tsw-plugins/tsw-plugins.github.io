@@ -26,6 +26,7 @@ each finding says how it was verified and when. Older, chronological notes live 
 | [remote-driving.md](remote-driving.md) | A guest drives the host's train: seat and lever messages, applying values on the host, verified in game |
 | [ghosts-native.md](ghosts-native.md) | Ghost trains from the Rust DLL: what the host sends, spawning options, the view-actor ghosts that were built |
 | [train-copies.md](train-copies.md) | Real copies of the host's trains on a guest (G3): spawning at a track position, kinematic trains steered by the mod, what boarding does |
+| [copy-full-physics.md](copy-full-physics.md) | Why a copy spawned with SpawnFormation stays kinematic despite bPhysicsRequired (the route timetable's physics requester), what makes a formation full physics, and the coop fix |
 | [avatars.md](avatars.md) | Bodies for other players: a plain Character dressed from the modular character meshes, animation assets |
 | [custom-player-models.md](custom-player-models.md) | Custom player models: none found for TSW; mod pak vs runtime import vs recolouring, coop distribution by hash (paused) |
 | [other-editions.md](other-editions.md) | Train Sim World 5: everything loads and works; what differed (menu look, Steamworks 1.47, hard-coded "7"s) and the fixes |
