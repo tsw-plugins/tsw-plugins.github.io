@@ -28,6 +28,7 @@ Win64/
     config/loader.toml       load = ["ue4ss/UE4SS.dll"] when UE4SS should run too
     config/<plugin>.toml     each plugin's settings, written by the loader
     logs/loader.log          the loader's and the plugins' log
+    reports/                 crash and freeze reports (the newest 10)
   tswcoop/                   tsw-coop's images
   tswcoop.cfg                tsw-coop's advanced network settings (optional)
   tswcoop-native.log         tsw-coop's own log
@@ -85,6 +86,28 @@ The adapter's console commands: `tsw.status`, `tsw.console <command>` (the engin
 
 The flag files of the standalone mod (`tswcoop-native-no-ue4ss`, `tswcoop-no-skip-intro`,
 `tswcoop-no-jump`) are no longer read: use `loader.toml`'s `load` list and the settings above.
+
+## Crash reports
+
+When the game crashes, freezes (no answer for 20 s) or ends without closing normally, uniloader
+makes a report at the next start: a zip with the crash dumps, the game's own crash report and
+the loader's log, with IP addresses, `tswcoop://` invites, Steam ids, passwords and keys removed.
+A window then asks what to do with it:
+
+- **Send report** uploads it to the tsw-plugins master server, which answers with a report id:
+  tell the mod's author that id with what you were doing. Nothing is sent unless you choose this.
+- **Save to Desktop** copies it to your Desktop (`TrainSimWorld7-crash-report-<date>.zip`) to
+  send yourself. It is also where a report goes when sending fails.
+
+| Setting / command | Effect |
+| --- | --- |
+| `uniloader.crash_reports` | `ask` (default), `desktop` (always save, never ask) or `off` |
+| `tsw.report_url` | Where **Send report** uploads to; empty: Desktop only |
+| `uniloader.report list` | The reports and what became of each |
+| `uniloader.report now` | Make a report of the running game (a freeze you can still type in) |
+| `uniloader.report send <zip>` / `desktop <zip>` | What the two buttons do |
+
+The reports stay in `uniloader/reports/` either way; the ten newest are kept.
 
 ## Removing
 
