@@ -237,6 +237,17 @@ LeftRhine BR 103, BR 110 and the Bnrdzf 463 cab car:
 
   The screen rectangle has to be placed and checked in game (screenshot, then adjust). Until that
   exists, the HUD panel is the only way to show the page in these trains.
+- **Built (2026-10-24, untested in game)**: tsw-sdk `key_screen` (863cc3f) finds the view actor's
+  `S3_*` keys at run time and frames the screen with them: the top row runs from Aus (top left) to
+  UD, the right-hand column from Clear down to Enter, and the screen is the space between, 1 cm left
+  of Aus, 1.5 cm below the row, 2 cm left of the column and 1 cm below Enter. On the BR 110 that is
+  22.6 × 16.8 cm on a panel leaning back about 35°, the 4:3 of a 10.4" unit. A two-sided widget
+  component with no collision goes there, holding an empty native user widget
+  (`UTS2NotificationWidget`, else `UTS2MainMenuWidget`) with a canvas root at 640 × 480. tsw-ebula
+  (39e837a) uses it when the driven vehicle shows no EbuLa page; UD of that cab switches the look.
+  The BR 103's view does name `S3_UD_F_GEN_VARIABLE` and friends (name map); only the decompile
+  lost their templates, so its keys should be found at run time too. In game, check: the screen
+  sits on the face (not mirrored, not floating), its size, and that the keys still click.
 
 ## Proposal
 
