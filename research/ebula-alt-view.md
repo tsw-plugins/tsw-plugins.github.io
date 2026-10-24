@@ -3,7 +3,7 @@ name: ebula-alt-view
 description: >-
   A second EBuLa look the owner wants as a selectable view mode next to the classic one: two reference screenshots (Munich–Mühldorf, Markt Schwaben and Dorfen) and what they show, column by column. The reference for tsw-ebula's alternative view.
 created: 2026-10-24T00:05+0200
-last_edited: 2026-10-24T00:05+0200
+last_edited: 2026-10-24T02:45+0200
 ---
 
 # Alternative EBuLa view (2026-10-24)
@@ -36,8 +36,26 @@ Route in both: Munich–Mühldorf (Markt Schwaben, Poing, Dorfen).
   the delay (`+411.2 min`) and an (i) button.
 - **Status line** below it with the clock (`23:59:44`, `00:00:02`).
 
-## For tsw-ebula
+## In tsw-ebula (d92101a)
 
-A setting chooses the look (for example `ebula.style = classic | alt`), switchable at
-runtime. The data model stays the same; only the renderer differs. The todo item is in
-`tasks/todo.md` under "2. tsw-ebula".
+`ebula.style = classic | modern` chooses the look, switched at runtime by the style hotkey
+or the `ebula.style` command (a physical cab key is coming, from the survey in
+[ebula-cab-screens.md](ebula-cab-screens.md)). The page data is the same; `src/modern.rs` draws it:
+
+- the page's train row becomes the header (speed and km at the train);
+- the body has 14 rows in seven columns (speed 38, km 60, track 74, symbol 34, text 270,
+  arrival 86, departure 78 px at the 640 px design width), ruled after km, text and
+  arrival as in the photos;
+- a rule over the speed where it changes, bold stops with bold times;
+- a yellow 2 px line under the lowest point ahead of the train; the points passed (kept
+  by `scroll`) stay below it;
+- the softkey bar (SAT, ◆, /R, RW, radio, delay, i) and a clock line;
+- day and night palettes scaled to a cab screen's light like the classic ones.
+
+The HTML preview the unit test writes (`EBULA_PREVIEW_MODERN`): day, three points passed, night.
+
+![Modern view preview](ebula-alt-view/preview.png)
+
+Not taken from the photos: the signal number right-aligned in the text column (the game gives
+no signal ids, so names like "Sbk 12" stay as one text), the blue crossed Z and ¥ symbols
+(no source yet), the small red tab at the top left.
