@@ -4,7 +4,7 @@ description: >-
   Installing, checking and removing the mods on Windows and Linux/Proton: uniloader as dwmapi.dll, the TSW adapter and the plugins in plugins/, tsw-coop's installers.
 game_build: 886 (TSW 7, Steam build 25890949)
 created: 2026-10-18T11:57+0200
-last_edited: 2026-10-18T15:30+0200
+last_edited: 2026-10-25T22:39+0100
 ---
 
 # Install
@@ -92,7 +92,12 @@ The flag files of the standalone mod (`tswcoop-native-no-ue4ss`, `tswcoop-no-ski
 When the game crashes, freezes (no answer for 20 s) or ends without closing normally, uniloader
 makes a report at the next start: a zip with the crash dumps, the game's own crash report and
 the loader's log, with IP addresses, `tswcoop://` invites, Steam ids, passwords and keys removed.
-A window then asks what to do with it:
+A crash's `info.txt` says in words what faulted: the registers, the stack (module + offset per
+frame) and every module in the game, `*` marking those of other programs (overlays, recorders).
+Windows' own error report of the crash (`wer-1.txt`) is added when Windows made one. The dumps
+are written by a small helper (`rundll32.exe` running uniloader) that starts with the game and
+ends with it, so a game that dies while crashing still leaves a whole dump. A window then asks
+what to do with the report:
 
 - **Send report** uploads it to the tsw-plugins master server, which answers with a report id:
   tell the mod's author that id with what you were doing. Nothing is sent unless you choose this.
