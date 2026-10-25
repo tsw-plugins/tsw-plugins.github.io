@@ -97,7 +97,9 @@ A window then asks what to do with it:
 - **Send report** uploads it to the tsw-plugins master server, which answers with a report id:
   tell the mod's author that id with what you were doing. Nothing is sent unless you choose this.
 - **Save to Desktop** copies it to your Desktop (`TrainSimWorld7-crash-report-<date>.zip`) to
-  send yourself. It is also where a report goes when sending fails.
+  send yourself. It is also where a report goes when sending fails, and where a report goes
+  that was never answered: a game that crashes at every start never shows the question, so
+  the next start saves the earlier reports to the Desktop by itself.
 
 | Setting / command | Effect |
 | --- | --- |
