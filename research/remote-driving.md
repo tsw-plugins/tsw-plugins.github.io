@@ -9,8 +9,10 @@ last_edited: 2026-10-22T05:00+0200
 
 # Remote driving: a guest drives the host's train (2026-10-17)
 
-> **Key changed 2026-10-22:** the seat key is now **F11**. F8 (used below, as tested) is the
-> game's own destination-display key (DefaultBindings), so it moved.
+> **Key changed 2026-10-25:** the seat is the rebindable `coop.seat` action, default
+> **Ctrl+Shift+S** (`/seat` in the chat). F8 (used below, as tested) is the game's own
+> destination-display key (DefaultBindings); F11 (2026-10-22) was polled by hand instead of
+> going through the loader's hotkeys.
 
 Code: `mod/native/src/drive.rs` (host and guest side), events through the
 relay's existing `event` message (no relay change). Concept: docs/08
