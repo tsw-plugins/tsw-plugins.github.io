@@ -102,9 +102,14 @@ what to do with the report:
 - **Send report** uploads it to the tsw-plugins master server, which answers with a report id:
   tell the mod's author that id with what you were doing. Nothing is sent unless you choose this.
 - **Save to Desktop** copies it to your Desktop (`TrainSimWorld7-crash-report-<date>.zip`) to
-  send yourself. It is also where a report goes when sending fails, and where a report goes
-  that was never answered: a game that crashes at every start never shows the question, so
-  the next start saves the earlier reports to the Desktop by itself.
+  send yourself. It is also where a report goes when sending fails.
+- **Closing the window** (its X, Escape or Back), or **Not now** when no send address is set,
+  decides nothing: the report stays in `uniloader/reports/` and is asked about again at the
+  next start, one window after another. Nothing is saved or sent until you pick a button.
+
+A report whose window you never saw (a game that crashes at every start never shows it) is
+saved to the Desktop by itself once a newer report exists. The coop mod's log goes into each
+report too (its last 4 MB), scrubbed like the others.
 
 | Setting / command | Effect |
 | --- | --- |
@@ -113,6 +118,7 @@ what to do with the report:
 | `uniloader.report list` | The reports and what became of each |
 | `uniloader.report now` | Make a report of the running game (a freeze you can still type in) |
 | `uniloader.report send <zip>` / `desktop <zip>` | What the two buttons do |
+| `uniloader.report later <zip>` | What closing the window does: ask again at the next start |
 
 The reports stay in `uniloader/reports/` either way; the ten newest are kept.
 
